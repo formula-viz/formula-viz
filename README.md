@@ -17,7 +17,7 @@ formula-viz ingests raw F1 telemetry data from qualifying sessions and converts 
 The system produces full qualifying sessions rendered in both desktop (16:9) and mobile (9:16) formats:
 
 [![Formula 1 Visualization](https://img.youtube.com/vi/QeUI84OH63w/maxresdefault.jpg)](https://www.youtube.com/watch?v=QeUI84OH63w)
-*Click the image above to watch a Formula 1 visualization*
+*Click the image above to link to an example video on the channel.*
 
 - [YouTube](https://youtube.com/formula-viz)
 - [Discord](https://discord.gg/formula-viz)
