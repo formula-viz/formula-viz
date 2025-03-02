@@ -13,7 +13,7 @@ formula-viz ingests raw F1 telemetry data from qualifying sessions and converts 
 - GPU-accelerated rendering on GitHub runners
 - Continuous deployment to YouTube
 
-## 🎬 Example Visualizations
+## 🎬 Example
 The system produces full qualifying sessions rendered in both desktop (16:9) and mobile (9:16) formats:
 
 [![Formula 1 Visualization](https://img.youtube.com/vi/QeUI84OH63w/maxresdefault.jpg)](https://www.youtube.com/watch?v=QeUI84OH63w)
