@@ -1,0 +1,15 @@
+fastf1>=3.5.2
+numpy
+pyyaml
+pandas
+pandas-stubs
+scipy
+logger
+colormath
+flask
+fake-bpy-module-latest
+google-api-python-client
+google-auth
+google-auth-oauthlib
+google-auth-httplib2
+pytest

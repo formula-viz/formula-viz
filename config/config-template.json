@@ -1,0 +1,33 @@
+{
+  "track": "AUSTRALIA",
+  "year": 2024,
+  "type": "rest-of-field",
+  "drivers": ["Verstappen"],
+  "dev_settings": {
+    "ui_mode": false,
+    "quick_textures_mode": false,
+    "limited_frames_mode": false,
+    "thumbnail_mode": false
+  },
+  "render": {
+    "engine": "eevee",
+    "fps": 30,
+    "samples": 32,
+    "is_both_mode": false,
+    "is_shorts_output": true,
+    "output": "render-output.mp4",
+    "start_buffer_frames": 15,
+    "end_buffer_frames": 70
+  },
+  "post_process": {
+    "output": "post-process-output.mp4",
+    "music-fadeout-seconds": 5
+  },
+  "socials": {
+    "youtube": {
+      "service_account_path": "formula-viz-981f62016605.json",
+      "visibility": "unlisted",
+      "publish_at": null
+    }
+  }
+}
