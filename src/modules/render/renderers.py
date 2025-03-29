@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 
 import bpy
+from bpy.types import Driver
+from pandas.core.frame import DataFrame
 
 from src.models.app_state import AppState
 from src.models.config import Config
@@ -181,6 +183,11 @@ class HeadToHeadRenderer(AbstractRenderer):
         """
         assert self.state.load_data is not None
 
+        new_driver_dfs: dict[Driver, DataFrame] = {}
+        for driver, df in self.state.load_data.driver_dfs.items():
+            new_driver_dfs[driver] = df[~df["FastForward"]]
+        self.state.load_data.driver_dfs = new_driver_dfs
+
         self.state.driver_objs = add_driver_objects.main(
             self.state.load_data.driver_dfs,
             self.state.load_data.drivers_in_color_order,
@@ -278,6 +285,11 @@ class RestOfFieldRenderer(AbstractRenderer):
             raise ValueError(
                 "No focused driver found,this indicates that the focused driver was not the first in the array of drivers in config."
             )
+
+        new_driver_dfs: dict[Driver, DataFrame] = {}
+        for driver, df in self.state.load_data.driver_dfs.items():
+            new_driver_dfs[driver] = df[~df["FastForward"]]
+        self.state.load_data.driver_dfs = new_driver_dfs
 
         self.state.driver_objs = add_driver_objects.main(
             self.state.load_data.driver_dfs,

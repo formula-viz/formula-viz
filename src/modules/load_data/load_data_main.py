@@ -2,6 +2,7 @@ from src.models.app_state import AppState, LoadData
 from src.models.config import Config
 from src.modules.load_data import load_driver_data, load_track_data
 from src.modules.load_data.setup_drivers import setup_drivers_h2h, setup_drivers_rof
+from src.modules.load_data.setup_fast_forward import set_fast_forward_frames
 
 
 def load_data_main(config: Config, app_state: AppState):
@@ -23,6 +24,8 @@ def load_data_main(config: Config, app_state: AppState):
         focused_driver, drivers_in_color_order, driver_colors = setup_drivers_h2h(
             config, driver_dfs
         )
+
+    driver_dfs = set_fast_forward_frames(focused_driver, driver_dfs, config)
 
     return LoadData(
         track_data=track_data,

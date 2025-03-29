@@ -655,15 +655,26 @@ class StatusTrack:
 
         # Apply rotation to driver positions
         for driver, df in driver_dfs.items():
-            for i in range(len(df)):
-                x, y = float(df.loc[i, "X"]), float(df.loc[i, "Y"])  # pyright: ignore
-                cos_angle = math.cos(rotation_angle)
-                sin_angle = math.sin(rotation_angle)
-                new_x = x * cos_angle - y * sin_angle
-                new_y = x * sin_angle + y * cos_angle
-                df.loc[i, "X"] = new_x
-                df.loc[i, "Y"] = new_y
-            driver_dfs[driver] = df
+            # Create temporary numpy arrays for faster processing
+            x_values = df["X"].to_numpy(dtype=float)
+            y_values = df["Y"].to_numpy(dtype=float)
+
+            # Precompute trig values
+            cos_angle = math.cos(rotation_angle)
+            sin_angle = math.sin(rotation_angle)
+
+            # Vectorized rotation calculation
+            new_x_values = x_values * cos_angle - y_values * sin_angle
+            new_y_values = x_values * sin_angle + y_values * cos_angle
+
+            # Assign back to dataframe
+            df_copy = df.copy()
+            df_copy["X"] = new_x_values
+            df_copy["Y"] = new_y_values
+
+            # Update the driver dataframe
+            driver_dfs[driver] = df_copy
+
         rotated_track_data = TrackData(
             rotated_inner_points,
             None,
@@ -746,9 +757,9 @@ class StatusTrack:
         for i in range(len(x_vals)):
             frame = i + 1
             if is_flag:
-                indicator.location = (x_vals[i], y_vals[i], 10)
+                indicator.location = (x_vals.iloc[i], y_vals.iloc[i], 10)
             else:
-                indicator.location = (x_vals[i], y_vals[i], 0)
+                indicator.location = (x_vals.iloc[i], y_vals.iloc[i], 0)
             indicator.keyframe_insert(data_path="location", frame=frame)  # pyright: ignore
 
         return indicator

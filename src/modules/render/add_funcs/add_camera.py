@@ -42,14 +42,20 @@ def scale_frames(df_for_cam: DataFrame):
     return pd.DataFrame({"X": cam_x, "Y": cam_y, "Z": cam_z})
 
 
-def move_with_min_max_distance(cam_df: DataFrame, car_df: DataFrame) -> None:
+def move_with_min_max_distance(cam_df: DataFrame, car_df: DataFrame) -> DataFrame:
     """Adjust camera position to maintain a distance from the car between min_distance and max_distance.
 
     Args:
         cam_df (DataFrame): DataFrame containing camera position data (X, Y, Z)
         car_df (DataFrame): DataFrame containing car position data (X, Y, Z)
 
+    Returns:
+        DataFrame: A new camera DataFrame with adjusted positions
+
     """
+    assert len(cam_df) == len(car_df)
+
+    # Extract values from DataFrames
     cam_xs = cam_df["X"].astype(float)
     cam_ys = cam_df["Y"].astype(float)
     cam_zs = cam_df["Z"].astype(float)
@@ -58,31 +64,51 @@ def move_with_min_max_distance(cam_df: DataFrame, car_df: DataFrame) -> None:
     car_ys = car_df["Y"].astype(float)
     car_zs = car_df["Z"].astype(float)
 
-    for i in range(len(cam_df)):
-        cam_x = cam_xs[i]
-        cam_y = cam_ys[i]
-        cam_z = cam_zs[i]
+    # Create new arrays to store adjusted positions
+    new_cam_xs = []
+    new_cam_ys = []
+    new_cam_zs = []
 
-        car_x = car_xs[i]
-        car_y = car_ys[i]
-        car_z = car_zs[i]
+    for i in range(len(cam_df)):
+        cam_x = cam_xs.iloc[i]
+        cam_y = cam_ys.iloc[i]
+        cam_z = cam_zs.iloc[i]
+
+        car_x = car_xs.iloc[i]
+        car_y = car_ys.iloc[i]
+        car_z = car_zs.iloc[i]
 
         cam_point = (cam_x, cam_y, cam_z)
         car_point = (car_x, car_y, car_z)
 
         vector = mathutils.Vector(cam_point) - mathutils.Vector(car_point)
 
-        # Ensure camera is not too far away
+        # Determine adjusted camera position
         if vector.length > MAX_CAM_DISTANCE:
-            cam_df.loc[i, "X"] = float(car_x + vector.normalized().x * MAX_CAM_DISTANCE)
-            cam_df.loc[i, "Y"] = float(car_y + vector.normalized().y * MAX_CAM_DISTANCE)
-            cam_df.loc[i, "Z"] = float(car_z + vector.normalized().z * MAX_CAM_DISTANCE)
-
-        # Ensure camera is not too close
+            new_x = float(car_x + vector.normalized().x * MAX_CAM_DISTANCE)
+            new_y = float(car_y + vector.normalized().y * MAX_CAM_DISTANCE)
+            new_z = float(car_z + vector.normalized().z * MAX_CAM_DISTANCE)
         elif vector.length < MIN_CAM_DISTANCE:
-            cam_df.loc[i, "X"] = float(car_x + vector.normalized().x * MIN_CAM_DISTANCE)
-            cam_df.loc[i, "Y"] = float(car_y + vector.normalized().y * MIN_CAM_DISTANCE)
-            cam_df.loc[i, "Z"] = float(car_z + vector.normalized().z * MIN_CAM_DISTANCE)
+            new_x = float(car_x + vector.normalized().x * MIN_CAM_DISTANCE)
+            new_y = float(car_y + vector.normalized().y * MIN_CAM_DISTANCE)
+            new_z = float(car_z + vector.normalized().z * MIN_CAM_DISTANCE)
+        else:
+            # Keep original position if distance is within range
+            new_x = cam_x
+            new_y = cam_y
+            new_z = cam_z
+
+        # Append adjusted values to new arrays
+        new_cam_xs.append(new_x)
+        new_cam_ys.append(new_y)
+        new_cam_zs.append(new_z)
+
+    # Create a completely new DataFrame with the same length
+    new_cam_df = pd.DataFrame({"X": new_cam_xs, "Y": new_cam_ys, "Z": new_cam_zs})
+    # Verify the new DataFrame has the expected length
+    assert len(new_cam_df) == len(car_df)
+
+    return new_cam_df
 
 
 def add_keyframes(

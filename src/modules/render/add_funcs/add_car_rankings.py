@@ -187,7 +187,7 @@ def main(
     driver_data: list[list[tuple[float, float, float]]] = []
     for i, (driver, df) in enumerate(driver_dfs.items()):
         car_points: list[tuple[float, float, float]] = [
-            (df["X"][i], df["Y"][i], df["Z"][i]) for i in range(len(df))
+            (df.iloc[i]["X"], df.iloc[i]["Y"], df.iloc[i]["Z"]) for i in range(len(df))
         ]
         driver_data.append(car_points)
         indices[i] = driver

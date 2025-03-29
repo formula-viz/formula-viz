@@ -57,12 +57,38 @@ def edit_video(config: Config, app_state: AppState):
     # Set scene frame range to match the video
     bpy.context.scene.frame_start = 1
     bpy.context.scene.frame_end = video_strip.frame_final_duration
-    app_state.num_frames = video_strip.frame_final_duration
 
     log_info(f"Added video file: {app_state.render_output_path}")
 
+    cur_sped_frame = 0
+    absolute_frame_to_sped_frame_map = {}
+    driver_df = app_state.load_data.driver_dfs[app_state.load_data.focused_driver]
+
+    # Check if any frames are missing the FastForward value
+    if "FastForward" not in driver_df.columns:
+        log_info(
+            "Warning: FastForward column is missing. Setting all frames to normal speed."
+        )
+        driver_df["FastForward"] = False
+    elif driver_df["FastForward"].isna().any():
+        log_info(
+            "Warning: Some frames have missing FastForward values. Setting those to False."
+        )
+        driver_df["FastForward"].fillna(False)
+
+    for index, row in driver_df.iterrows():
+        print(row["FastForward"])
+        if row["FastForward"] is False:
+            cur_sped_frame += 1
+        absolute_frame_to_sped_frame_map[index] = cur_sped_frame
+
+    print("Count False values: ", driver_df["FastForward"].value_counts()[False])
+    print("Total sped frames: ", cur_sped_frame)
+
     cur_channel = 2
-    driver_dash = add_driver_dash.DriverDash(app_state, config, cur_channel)
+    driver_dash = add_driver_dash.DriverDash(
+        app_state, config, cur_channel, absolute_frame_to_sped_frame_map
+    )
     cur_channel = driver_dash.cur_channel + 1
 
     add_timer.add_frame_counter(

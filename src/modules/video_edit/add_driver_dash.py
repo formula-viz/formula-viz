@@ -12,13 +12,20 @@ from src.utils.colors import hex_to_blender_rgb
 
 
 class DriverDash:
-    def __init__(self, state: AppState, config: Config, cur_channel: int):
+    def __init__(
+        self,
+        state: AppState,
+        config: Config,
+        cur_channel: int,
+        absolute_frame_to_sped_frame_map: dict[int, int],
+    ):
         self.state = state
         self.config = config
         self.cur_channel = cur_channel
+        self.absolute_frame_to_sped_frame_map = absolute_frame_to_sped_frame_map
 
         self.start_frame = 1
-        self.end_frame = 1 + self.state.num_frames
+        self.end_frame = bpy.context.scene.frame_end
 
         self._add_driver_images()
 
@@ -224,14 +231,45 @@ class DriverDash:
             (driver_sectors_times_left.sector2, driver_sectors_times_right.sector2),
             (driver_sectors_times_left.sector3, driver_sectors_times_right.sector3),
         ]
+        fps = self.config["render"]["fps"]
 
-        left_sector_next_start = self.config["render"]["start_buffer_frames"]
-        right_sector_next_start = self.config["render"]["start_buffer_frames"]
+        left_sector_1_start = self.config["render"]["start_buffer_frames"]
+        right_sector_1_start = self.config["render"]["start_buffer_frames"]
+
+        left_sector_2_start = self.absolute_frame_to_sped_frame_map[
+            left_sector_1_start + int(sectors[0][0].total_seconds() * fps)
+        ]
+        right_sector_2_start = self.absolute_frame_to_sped_frame_map[
+            right_sector_1_start + int(sectors[0][1].total_seconds() * fps)
+        ]
+
+        left_sector_3_start = self.absolute_frame_to_sped_frame_map[
+            left_sector_2_start + int(sectors[1][0].total_seconds() * fps)
+        ]
+        right_sector_3_start = self.absolute_frame_to_sped_frame_map[
+            right_sector_2_start + int(sectors[1][1].total_seconds() * fps)
+        ]
+
+        left_end_race = self.absolute_frame_to_sped_frame_map[
+            left_sector_3_start + int(sectors[2][0].total_seconds() * fps)
+        ]
+        right_end_race = self.absolute_frame_to_sped_frame_map[
+            right_sector_3_start + int(sectors[2][1].total_seconds() * fps)
+        ]
+
+        end_frames = [
+            (left_sector_2_start, right_sector_2_start),
+            (left_sector_3_start, right_sector_3_start),
+            (left_end_race, right_end_race),
+        ]
 
         cur_left_loc: tuple[float, float] = (0.055, 0.10)
         cur_right_loc: tuple[float, float] = (0.555, 0.10)
 
-        for left_sector, right_sector in sectors:
+        for (left_sector, right_sector), (
+            left_end_sector,
+            right_end_sector,
+        ) in zip(sectors, end_frames):
             left_behind_time = None
             right_behind_time = None
 
@@ -247,15 +285,8 @@ class DriverDash:
                 left_color = (1.0, 1.0, 0.0, 1.0)  # Yellow for even
                 right_color = (1.0, 1.0, 0.0, 1.0)  # Yellow for even
 
-            left_sector_next_start += int(
-                left_sector.total_seconds() * self.config["render"]["fps"]
-            )
-            right_sector_next_start += int(
-                right_sector.total_seconds() * self.config["render"]["fps"]
-            )
-
             add_sector_time(
-                left_sector_next_start,
+                left_end_sector,
                 left_sector,
                 cur_left_loc,
                 left_color,
@@ -263,7 +294,7 @@ class DriverDash:
             )
             cur_left_loc = (cur_left_loc[0] + 0.14, cur_left_loc[1])
             add_sector_time(
-                right_sector_next_start,
+                right_end_sector,
                 right_sector,
                 cur_right_loc,
                 right_color,
@@ -271,31 +302,31 @@ class DriverDash:
             )
             cur_right_loc = (cur_right_loc[0] + 0.14, cur_right_loc[1])
 
-        total_race_time_left = (
-            driver_sectors_times_left.sector1.total_seconds()
-            + driver_sectors_times_left.sector2.total_seconds()
-            + driver_sectors_times_left.sector3.total_seconds()
-        )
-        add_final_time(
-            self.config["render"]["start_buffer_frames"]
-            + int(total_race_time_left * self.config["render"]["fps"]),
-            total_race_time_left,
-            (0.16, 0.04),
-            (1, 1, 1, 1),
-        )
+        # total_race_time_left = (
+        #     driver_sectors_times_left.sector1.total_seconds()
+        #     + driver_sectors_times_left.sector2.total_seconds()
+        #     + driver_sectors_times_left.sector3.total_seconds()
+        # )
+        # add_final_time(
+        #     self.config["render"]["start_buffer_frames"]
+        #     + int(total_race_time_left * self.config["render"]["fps"]),
+        #     total_race_time_left,
+        #     (0.16, 0.04),
+        #     (1, 1, 1, 1),
+        # )
 
-        total_race_time_right = (
-            driver_sectors_times_right.sector1.total_seconds()
-            + driver_sectors_times_right.sector2.total_seconds()
-            + driver_sectors_times_right.sector3.total_seconds()
-        )
-        add_final_time(
-            self.config["render"]["start_buffer_frames"]
-            + int(total_race_time_right * self.config["render"]["fps"]),
-            total_race_time_right,
-            (0.67, 0.04),
-            (1, 1, 1, 1),
-        )
+        # total_race_time_right = (
+        #     driver_sectors_times_right.sector1.total_seconds()
+        #     + driver_sectors_times_right.sector2.total_seconds()
+        #     + driver_sectors_times_right.sector3.total_seconds()
+        # )
+        # add_final_time(
+        #     self.config["render"]["start_buffer_frames"]
+        #     + int(total_race_time_right * self.config["render"]["fps"]),
+        #     total_race_time_right,
+        #     (0.67, 0.04),
+        #     (1, 1, 1, 1),
+        # )
 
     def _add_driver_images(self):
         assert self.state.load_data is not None

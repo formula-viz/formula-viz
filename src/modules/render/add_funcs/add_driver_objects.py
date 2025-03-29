@@ -234,14 +234,17 @@ def add_driver_keyframes(driver_obj, df):
     driver_loc_keyframes = []
     driver_rot_keyframes = []
     for i in range(len(df)):
-        frame = i + 1
-        point = mathutils.Vector((x_values[i], y_values[i], 0))
+        cur_frame = i + 1
+        point = mathutils.Vector((x_values.iloc[i], y_values.iloc[i], 0))
 
-        rot_quat = mathutils.Quaternion((rot_w[i], rot_x[i], rot_y[i], rot_z[i]))
+        rot_quat = mathutils.Quaternion(
+            (rot_w.iloc[i], rot_x.iloc[i], rot_y.iloc[i], rot_z.iloc[i])
+        )
         rot_eul = rot_quat.to_euler()
 
-        driver_loc_keyframes.append((point, frame))
-        driver_rot_keyframes.append((rot_eul, frame))
+        driver_loc_keyframes.append((point, cur_frame))
+        driver_rot_keyframes.append((rot_eul, cur_frame))
+        cur_frame += 1
 
     # Apply driver keyframes in batch
     for point, frame in driver_loc_keyframes:
@@ -258,7 +261,7 @@ def add_driver_keyframes(driver_obj, df):
             if "pyrotate" in child.name.lower():
                 for i in range(len(df)):
                     frame = i + 1
-                    child.rotation_euler.x = tire_rot[i]
+                    child.rotation_euler.x = tire_rot.iloc[i]
                     # child.rotation_euler.z = harsher_rot_z[i]
                     child.keyframe_insert(data_path="rotation_euler", frame=frame)
             animate_pyrotate_objects(child)
@@ -386,7 +389,7 @@ def add_driver_trail(driver_obj, df, driver, trail_color, trail_length=30):
         # Update each point's position based on the car's past positions
         for i in range(num_points):
             # Get the position from i frames ago
-            history_frame = frame - i * stride
+            history_frame = frame - i - 20
             if history_frame >= 0 and history_frame < total_frames:
                 x = x_values[history_frame]
                 y = y_values[history_frame]
@@ -401,7 +404,8 @@ def add_driver_trail(driver_obj, df, driver, trail_color, trail_length=30):
         # Update each point's position
         for i in range(trail_length):
             # Get the position from i frames ago
-            history_frame = frame - i * stride
+            history_frame = frame - i - 20
+            print("here")
             if history_frame >= 0 and history_frame < total_frames:
                 x = x_values[history_frame]
                 y = y_values[history_frame]
