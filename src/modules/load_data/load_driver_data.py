@@ -735,7 +735,7 @@ def add_car_rots(df):
     """
     points = [(df["X"][i], df["Y"][i], df["Z"][i]) for i in range(len(df))]
 
-    def get_rots(points, lookahead_points=20, slerp_val=0.2):
+    def get_rots(points, lookahead_points=20, slerp_val=0.1):
         # Previous rotation quaternion for SLERP
         prev_rot = None
         rot_w = []
@@ -788,7 +788,7 @@ def add_car_rots(df):
     df["LessLookaheadRotX"] = less_lookahead_rot_x
     df["LessLookaheadRotY"] = less_lookahead_rot_y
     df["LessLookaheadRotZ"] = less_lookahead_rot_z
-    df["RotZ"] = less_lookahead_rot_z
+    # df["RotZ"] = less_lookahead_rot_z
 
     harsher_rot_w, harsher_rot_x, harsher_rot_y, harsher_rot_z = get_rots(
         points, lookahead_points=40, slerp_val=0.1

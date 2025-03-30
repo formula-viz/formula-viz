@@ -9,7 +9,7 @@ from src.models.app_state import AppState
 from src.models.config import Config
 from src.modules.video_edit import (
     add_background_music,
-    add_driver_dash_new,
+    add_driver_dash,
     add_fast_forward_indicator,
     add_timer,
 )
@@ -85,7 +85,7 @@ def edit_video(config: Config, app_state: AppState):
     sped_point_df_with_times = focused_driver_run_data.sped_point_df
 
     cur_channel = 2
-    driver_dash = add_driver_dash_new.DriverDash(
+    driver_dash = add_driver_dash.DriverDash(
         app_state,
         config,
         run_drivers,

@@ -65,7 +65,7 @@ def add_frame_counter(
         text_strip.shadow_color = (0, 0, 0, 1)  # Black shadow
 
         if config["render"]["is_shorts_output"]:
-            text_strip.location = (0.08, 0.85)
+            text_strip.location = (0.26, 0.85)
             text_strip.font_size = 70
         else:
             text_strip.location = (0.5, 0.14)
