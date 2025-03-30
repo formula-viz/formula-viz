@@ -5,14 +5,13 @@ Follows a path which is a scaled version of the driver's path, accounted for cor
 
 import bpy
 import mathutils
-import numpy as np
 import pandas as pd
 from pandas import DataFrame, Series
 
 from src.models.config import Config
 
-MIN_CAM_DISTANCE = 80
-MAX_CAM_DISTANCE = 80
+MIN_CAM_DISTANCE = 70
+MAX_CAM_DISTANCE = 70
 
 
 def scale_frames(df_for_cam: DataFrame):
@@ -30,14 +29,15 @@ def scale_frames(df_for_cam: DataFrame):
 
     df_for_cam_x = df_for_cam["X"].astype(float)
     df_for_cam_y = df_for_cam["Y"].astype(float)
+    df_for_cam_z = df_for_cam["Z"].astype(float)
 
     cam_x: Series[float] = df_for_cam_x * scale_factor
     cam_y: Series[float] = df_for_cam_y * scale_factor
+    cam_z: Series[float] = df_for_cam_z * scale_factor
 
     cam_x = cam_x + df_for_cam_x.mean() - cam_x.mean()  # pyright: ignore
     cam_y = cam_y + df_for_cam_y.mean() - cam_y.mean()  # pyright: ignore
-
-    cam_z = np.zeros(len(cam_x)) + z_up
+    cam_z = cam_z + df_for_cam_z.mean() - cam_z.mean() + z_up  # pyright: ignore
 
     return pd.DataFrame({"X": cam_x, "Y": cam_y, "Z": cam_z})
 
@@ -185,7 +185,6 @@ def add_keyframes(
 def main(
     config: Config,
     df_for_cam: DataFrame,
-    driver_obj: bpy.types.Object,
     start_buffer_frames: int,
     end_buffer_frames: int,
 ):
@@ -213,7 +212,7 @@ def main(
     bpy.context.collection.objects.link(camera_obj)  # pyright: ignore
 
     cam_df = scale_frames(df_for_cam)
-    move_with_min_max_distance(cam_df, df_for_cam)
+    cam_df = move_with_min_max_distance(cam_df, df_for_cam)
 
     add_keyframes(
         config, camera_obj, cam_df, df_for_cam, start_buffer_frames, end_buffer_frames

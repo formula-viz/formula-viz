@@ -55,7 +55,7 @@ def get_rest_of_field_colors(driver: Driver):
     gray_scale = [(x, x, x) for x in np.linspace(70, 255, 19, dtype=float)]
     gray_scale.insert(
         0,
-        hex_to_normal_rgb(driver.driver_color),
+        hex_to_normal_rgb(driver.default_driver_color),
     )
 
     return [rgb_to_hex(x) for x in gray_scale]
@@ -85,7 +85,7 @@ def get_head_to_head_colors(drivers: list[Driver]):
     base_colors = ["#FFFFFF", "#808080", "#404040"]  # white, gray, dark gray
     base_color_idx = 0
 
-    colors = [driver.driver_color for driver in drivers]
+    colors = [driver.default_driver_color for driver in drivers]
 
     return colors
 

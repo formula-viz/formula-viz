@@ -9,7 +9,7 @@ from src.utils.colors import get_head_to_head_colors, get_rest_of_field_colors
 
 def setup_drivers_rof(
     config: Config, driver_dfs: dict[Driver, DataFrame]
-) -> tuple[Driver, list[Driver], list[str]]:
+) -> tuple[Driver, dict[Driver, str]]:
     focused_driver: Optional[Driver] = None
 
     for driver in driver_dfs.keys():
@@ -17,18 +17,20 @@ def setup_drivers_rof(
             focused_driver = driver
 
     assert focused_driver is not None, "Focused driver not found"
-    driver_colors = get_rest_of_field_colors(focused_driver)
+    driver_colors_list = get_rest_of_field_colors(focused_driver)
 
-    # for now, gold driver is just the first driver listed in drivers
-    drivers_in_color_order = [
-        driver for driver in driver_dfs.keys() if driver != focused_driver
-    ]
-    drivers_in_color_order.insert(0, focused_driver)
+    driver_colors = {}
+    driver_colors[focused_driver] = driver_colors_list.pop(0)
+    for driver in driver_dfs.keys():
+        if driver != focused_driver:
+            driver_colors[driver] = driver_colors_list.pop(0)
 
-    return focused_driver, drivers_in_color_order, driver_colors
+    return focused_driver, driver_colors
 
 
-def setup_drivers_h2h(config: Config, driver_dfs: dict[Driver, DataFrame]):
+def setup_drivers_h2h(
+    config: Config, driver_dfs: dict[Driver, DataFrame]
+) -> tuple[Driver, dict[Driver, str]]:
     drivers_in_color_order = []
     new_driver_dfs: dict[Driver, DataFrame] = {}
     if config["mixed_mode"]["enabled"]:
@@ -52,7 +54,11 @@ def setup_drivers_h2h(config: Config, driver_dfs: dict[Driver, DataFrame]):
     driver_dfs = new_driver_dfs
 
     focused_driver = drivers_in_color_order[0]
-    driver_colors = get_head_to_head_colors(drivers_in_color_order)
+    driver_colors_list = get_head_to_head_colors(drivers_in_color_order)
+
+    driver_colors_dict: dict[Driver, str] = {}
+    for driver, color in zip(drivers_in_color_order, driver_colors_list):
+        driver_colors_dict[driver] = color
 
     count_by_team: dict[str, int] = {}
     for driver in driver_dfs.keys():
@@ -64,12 +70,12 @@ def setup_drivers_h2h(config: Config, driver_dfs: dict[Driver, DataFrame]):
         if count >= 2:
             is_first_done = False
             for idx, (driver, driver_color) in enumerate(
-                zip(drivers_in_color_order, driver_colors)
+                zip(drivers_in_color_order, driver_colors_list)
             ):
                 if driver.team == team:
                     if not is_first_done:
                         is_first_done = True
                     else:
-                        driver_colors[idx] = "#ffffff"
+                        driver_colors_dict[driver] = "#ffffff"
 
-    return focused_driver, drivers_in_color_order, driver_colors
+    return focused_driver, driver_colors_dict

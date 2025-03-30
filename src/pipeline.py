@@ -16,7 +16,6 @@ def run_for_config(config: Config, project_root: Path):
     """
     app_state: AppState = AppState(
         project_root=project_root,
-        render_output_path=project_root / "output" / config["render"]["output"],
     )
 
     app_state.load_data = load_data_main.load_data_main(config, app_state)

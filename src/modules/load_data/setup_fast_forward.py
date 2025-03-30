@@ -7,54 +7,23 @@ from src.models.driver import Driver
 from src.utils.logger import log_info
 
 
-def set_fast_forward_frames(
-    focused_driver: Driver,
-    driver_dfs: dict[Driver, DataFrame],
-    config: Config,
-    fast_forward_mult: float = 3.0,
-    straight_line_threshold: float = 0.1,  # Threshold in radians (about 3 degrees)
-    lookahead: int = 25,  # Points to look ahead/behind
-):
-    """Identify frames where the focused driver is on a straight line and mark them for fast forwarding.
+def _find_initial_straights(
+    config: Config, focused_driver_df: DataFrame
+) -> list[tuple[int, bool]]:
+    straight_line_threshold: float = 0.1
+    lookahead: int = 25
 
-    Uses a simple method: checks if the angle between (i-lookahead) -> i -> (i+lookahead)
-    is below the threshold.
-
-    Args:
-        focused_driver: The driver to focus on for determining straight lines
-        driver_dfs: Dictionary mapping drivers to their DataFrames
-        config: Configuration dictionary with render settings
-        fast_forward_mult: Speed multiplier for fast forward segments
-        straight_line_threshold: Angle threshold in radians (lower = straighter)
-        lookahead: Number of points to look ahead/behind to determine straightness
-
-    Returns:
-        Updated driver_dfs with 'FastForward' column added to each DataFrame
-
-    """
-    # Get the focused driver's DataFrame
-    df = driver_dfs[focused_driver]
-
-    # Calculate start and end frames based on buffer settings
     start_buffer = config["render"]["start_buffer_frames"] * 2
     end_buffer = config["render"]["end_buffer_frames"]
 
-    # Initialize FastForward column as False for all drivers
-    for driver, driver_df in driver_dfs.items():
-        driver_df["FastForward"] = False
-
-    # Get positions
-    x_values = df["X"].values
-    y_values = df["Y"].values
-    total_frames = len(df)
-
-    # Skip if we don't have enough frames
-    if total_frames <= start_buffer + end_buffer + 2 * lookahead:
-        return driver_dfs
+    x_values = focused_driver_df["X"].values
+    y_values = focused_driver_df["Y"].values
 
     is_on_straight: list[tuple[int, bool]] = []
     # Process each frame within valid range
-    for i in range(start_buffer + lookahead, total_frames - end_buffer - lookahead):
+    for i in range(
+        start_buffer + lookahead, len(focused_driver_df) - end_buffer - lookahead
+    ):
         # Get points before and after current point
         p_before = (x_values[i - lookahead], y_values[i - lookahead])
         p_current = (x_values[i], y_values[i])
@@ -85,7 +54,11 @@ def set_fast_forward_frames(
             should_skip = angle < straight_line_threshold
             is_on_straight.append((i, should_skip))
 
-    new_is_on_straight = []
+    return is_on_straight
+
+
+def _filter_out_isolated_sections(is_on_straight: list[tuple[int, bool]]):
+    is_skip_zone = []
     was_previous_straight = False
     for idx, is_straight in is_on_straight:
         if is_straight and not was_previous_straight:
@@ -97,41 +70,67 @@ def set_fast_forward_frames(
                     break
 
             if num_in_group >= 15:
-                new_is_on_straight.append((idx, True))
+                is_skip_zone.append((idx, True))
                 was_previous_straight = True
             else:
-                new_is_on_straight.append((idx, False))
+                is_skip_zone.append((idx, False))
         elif is_straight and was_previous_straight:
-            new_is_on_straight.append((idx, True))
+            is_skip_zone.append((idx, True))
         else:
-            new_is_on_straight.append((idx, False))
+            is_skip_zone.append((idx, False))
             was_previous_straight = False
 
-    ff_frames = sum([is_straight[1] for is_straight in is_on_straight])
-    is_on_straight = new_is_on_straight
-    new_is_on_straight = {}
+    return is_skip_zone
 
+
+def _apply_basis_points(is_skip_zone: list[tuple[int, bool]]) -> dict[int, bool]:
+    """Given the list of indices and their skip status, we want to go through and sprinkle in non skipped points so that the car actually fast forwards instead of jumps."""
+    should_skip_point: dict[int, bool] = {}
     skipped_in_a_row = 0
-    for idx, is_straight in is_on_straight:
-        if is_straight and skipped_in_a_row < 2:
-            new_is_on_straight[idx] = True
+    for idx, is_straight in is_skip_zone:
+        if is_straight and skipped_in_a_row < 4:
+            should_skip_point[idx] = True
             skipped_in_a_row += 1
         else:
-            new_is_on_straight[idx] = False
+            should_skip_point[idx] = False
             skipped_in_a_row = 0
+
+    return should_skip_point
+
+
+def set_fast_forward_frames(
+    config: Config,
+    focused_driver: Driver,
+    driver_dfs: dict[Driver, DataFrame],
+):
+    """Identify frames where the focused driver is on a straight line and mark them for fast forwarding.
+
+    Uses a simple method: checks if the angle between (i-lookahead) -> i -> (i+lookahead)
+    is below the threshold.
+
+    Args:
+        focused_driver: The driver to focus on for determining straight lines
+        driver_dfs: Dictionary mapping drivers to their DataFrames
+        config: Configuration dictionary with render settings
+
+    Returns:
+        Updated driver_dfs with 'FastForward' column added to each DataFrame
+
+    """
+    is_on_straights = _find_initial_straights(config, driver_dfs[focused_driver])
+    is_skip_zone = _filter_out_isolated_sections(is_on_straights)
+    ff_frames = sum([is_straight[1] for is_straight in is_skip_zone])
+    should_skip_point = _apply_basis_points(is_skip_zone)
 
     for driver, driver_df in driver_dfs.items():
         for i, row in driver_df.iterrows():
-            if i not in new_is_on_straight:
+            if i not in should_skip_point:
                 driver_df.at[i, "FastForward"] = False
             else:
-                driver_df.at[i, "FastForward"] = new_is_on_straight[i]
+                driver_df.at[i, "FastForward"] = should_skip_point[i]
 
-    # Count and report fast forwarded frames
-    total_valid_frames = total_frames - start_buffer - end_buffer - 2 * lookahead
-    ff_percent = (ff_frames / total_valid_frames) * 100 if total_valid_frames > 0 else 0
-
+    ff_percent = (ff_frames / len(driver_dfs[focused_driver])) * 100
     log_info(
-        f"Fast forward frames: {ff_frames}/{total_valid_frames} ({ff_percent:.1f}%)"
+        f"Fast forward frames: {ff_frames}/{len(driver_dfs[focused_driver])} ({ff_percent:.1f}%)"
     )
-    return driver_dfs
+    return driver_dfs, should_skip_point

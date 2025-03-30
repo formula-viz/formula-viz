@@ -16,10 +16,7 @@ Main functionality includes:
 The processed data can be used to create 3D visualizations of qualifying laps.
 """
 
-import concurrent
-import concurrent.futures
 import os
-from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 from typing import Optional
 
@@ -264,30 +261,38 @@ def process_grouped_driver_tels(
 
     """
 
-    def get_average_start_end() -> tuple[float, float]:
+    def get_average_start_end() -> tuple[float, float, float]:
         start_points = np.array(
             [
-                [driver_tels[k]["X"].iloc[0], driver_tels[k]["Y"].iloc[0]]
+                [
+                    driver_tels[k]["X"].iloc[0],
+                    driver_tels[k]["Y"].iloc[0],
+                    driver_tels[k]["Z"].iloc[0],
+                ]
                 for k in driver_tels.keys()
             ]
         )
         end_points = np.array(
             [
-                [driver_tels[k]["X"].iloc[-1], driver_tels[k]["Y"].iloc[-1]]
+                [
+                    driver_tels[k]["X"].iloc[-1],
+                    driver_tels[k]["Y"].iloc[-1],
+                    driver_tels[k]["Z"].iloc[-1],
+                ]
                 for k in driver_tels.keys()
             ]
         )
         all_points = np.vstack((start_points, end_points))
         mean_of_all = np.mean(all_points, axis=0)
 
-        return mean_of_all[0], mean_of_all[1]
+        return mean_of_all[0], mean_of_all[1], mean_of_all[2]
 
     # using inner_points, outer_points find the idx which is closest to our start/finish line
     # we know that len(inner_points) == len(outer_points)
     def get_line(
         inner_points: list[tuple[float, float, float]],
         outer_points: list[tuple[float, float, float]],
-        start_end_point: tuple[float, float],
+        start_end_point: tuple[float, float, float],
     ):
         closest_idx = 0
         closest_dist = float("inf")
@@ -295,10 +300,12 @@ def process_grouped_driver_tels(
             dist_to_inner = (
                 (start_end_point[0] - inner_point[0]) ** 2
                 + (start_end_point[1] - inner_point[1]) ** 2
+                + (start_end_point[2] - inner_point[2]) ** 2
             ) ** 0.5
             dist_to_outer = (
                 (start_end_point[0] - outer_point[0]) ** 2
                 + (start_end_point[1] - outer_point[1]) ** 2
+                + (start_end_point[2] - outer_point[2]) ** 2
             ) ** 0.5
 
             if dist_to_inner + dist_to_outer < closest_dist:
@@ -328,7 +335,9 @@ def process_grouped_driver_tels(
     return line_idx
 
 
-def get_driver_df(tel: Telemetry, s_divisor: int, frames_per_second: int):
+def get_driver_df(
+    tel: Telemetry, s_divisor: int, frames_per_second: int, track_data: TrackData
+):
     """Generate a driver's position and speed DataFrame from telemetry.
 
     Processes raw telemetry data to create a DataFrame with X, Y, Z coordinates
@@ -349,16 +358,90 @@ def get_driver_df(tel: Telemetry, s_divisor: int, frames_per_second: int):
 
     prev_x: Optional[float] = None
     prev_y: Optional[float] = None
+    prev_z: Optional[float] = None
 
     x_vals: Series[float] = tel["X"]
     y_vals: Series[float] = tel["Y"]
-    for cur_x, cur_y in zip(x_vals, y_vals):
-        if prev_x is not None and prev_y is not None:
-            distance = ((prev_x - cur_x) ** 2 + (prev_y - cur_y) ** 2) ** 0.5
+    z_vals = []
+
+    # Variables to track the last closest segment
+    last_closest_idx = 0
+    search_radius = (
+        len(track_data.inner_points) // 10
+    )  # Number of points to check before and after last closest index
+    track_length = len(track_data.inner_points)
+
+    # For each point in telemetry data
+    for i, (x, y) in enumerate(zip(x_vals, y_vals)):
+        min_dist = float("inf")
+        interpolated_z = 0
+        closest_t = 0
+        closest_inner = None
+        closest_outer = None
+        closest_idx = last_closest_idx
+
+        if i == 0:
+            start_idx = 0
+            end_idx = len(track_data.inner_points) - 1
+        else:
+            # Subsequent points: check only nearby segments
+            start_idx = (last_closest_idx - search_radius) % track_length
+            end_idx = (last_closest_idx + search_radius) % track_length
+
+        idx = start_idx
+        while idx != end_idx:
+            inner_point = track_data.inner_points[idx]
+            outer_point = track_data.outer_points[idx]
+
+            # Create vectors for the line segment
+            line_start = mathutils.Vector((inner_point[0], inner_point[1]))
+            line_end = mathutils.Vector((outer_point[0], outer_point[1]))
+            point = mathutils.Vector((x, y))
+
+            line_vec = line_end - line_start
+            line_length_squared = line_vec.length_squared
+            if line_length_squared == 0:
+                continue
+
+            t = max(0, min(1, (point - line_start).dot(line_vec) / line_length_squared))
+            closest_point = line_start + t * line_vec
+            dist = (point - closest_point).length
+
+            # Update if this is the closest line segment
+            if dist < min_dist:
+                min_dist = dist
+                closest_t = t
+                closest_inner = inner_point
+                closest_outer = outer_point
+                closest_idx = idx
+            idx = (idx + 1) % track_length
+
+        if closest_inner is not None and closest_outer is not None:
+            # Interpolate Z value based on position along closest line segment
+            interpolated_z = (
+                closest_inner[2]  # Z value at inner point
+                + closest_t
+                * (closest_outer[2] - closest_inner[2])  # Interpolated difference
+            )
+        else:
+            # Fallback if no valid line segment found
+            interpolated_z = (
+                0 if not z_vals else z_vals[-1]
+            )  # Use previous Z value if available
+
+        z_vals.append(interpolated_z)
+        last_closest_idx = closest_idx  # Update last closest index for next iteration
+
+    for cur_x, cur_y, cur_z in zip(x_vals, y_vals, z_vals):
+        if prev_x is not None and prev_y is not None and prev_z is not None:
+            distance = (
+                (prev_x - cur_x) ** 2 + (prev_y - cur_y) ** 2 + (prev_z - cur_z) ** 2
+            ) ** 0.5
             total_distance += distance
             distances.append(total_distance)
         prev_x = cur_x
         prev_y = cur_y
+        prev_z = cur_z
 
     displacements = [a / total_distance for a in distances]
     # we want to set weights such that the spline is forced to go through the start and end points
@@ -371,6 +454,13 @@ def get_driver_df(tel: Telemetry, s_divisor: int, frames_per_second: int):
     )
     spl_y = UnivariateSpline(
         displacements, y_vals, w=weights, s=len(displacements) // s_divisor
+    )
+    z_interp = interp1d(
+        displacements,  # x values (original positions)
+        z_vals,  # z values to interpolate between
+        kind="linear",  # use linear interpolation
+        bounds_error=False,  # don't raise error for out of bounds
+        # fill_value=z_vals[0],  # use first/last values for out of bounds
     )
 
     # Extract time and speed data together, ensuring they're properly aligned
@@ -404,6 +494,7 @@ def get_driver_df(tel: Telemetry, s_divisor: int, frames_per_second: int):
 
     final_x = spl_x(adj_d_covered)
     final_y = spl_y(adj_d_covered)
+    final_z = z_interp(adj_d_covered)
 
     # add the first value to the beginning of sampled_speeds_m_per_s so they match length
     sampled_speeds_m_per_s = np.insert(
@@ -477,7 +568,7 @@ def get_driver_df(tel: Telemetry, s_divisor: int, frames_per_second: int):
         {
             "X": final_x,
             "Y": final_y,
-            "Z": np.zeros(len(final_x)),
+            "Z": final_z,
             "Time": times,
             "Speed": sampled_speeds_m_per_s,
             "Throttle": interpolated_throttle,
@@ -644,19 +735,7 @@ def add_car_rots(df):
     """
     points = [(df["X"][i], df["Y"][i], df["Z"][i]) for i in range(len(df))]
 
-    from pyquaternion import Quaternion
-
-    def to_track_quat(direction, axis1, axis2):
-        # Normalize the direction
-        direction = direction / np.linalg.norm(direction)
-
-        # This is a simplified version - you may need to adjust based on your coordinate system
-        return Quaternion(axis=direction, angle=0).elements  # Returns [w, x, y, z]
-
-    def slerp(q1, q2, t):
-        return Quaternion.slerp(Quaternion(q1), Quaternion(q2), t).elements
-
-    def get_rots(points, lookahead_points=20, slerp_val=0.1):
+    def get_rots(points, lookahead_points=20, slerp_val=0.2):
         # Previous rotation quaternion for SLERP
         prev_rot = None
         rot_w = []
@@ -697,6 +776,19 @@ def add_car_rots(df):
     df["RotX"] = rot_x
     df["RotY"] = rot_y
     df["RotZ"] = rot_z
+
+    (
+        less_lookahead_rot_w,
+        less_lookahead_rot_x,
+        less_lookahead_rot_y,
+        less_lookahead_rot_z,
+    ) = get_rots(points, lookahead_points=5, slerp_val=0.1)
+
+    df["LessLookaheadRotW"] = less_lookahead_rot_w
+    df["LessLookaheadRotX"] = less_lookahead_rot_x
+    df["LessLookaheadRotY"] = less_lookahead_rot_y
+    df["LessLookaheadRotZ"] = less_lookahead_rot_z
+    df["RotZ"] = less_lookahead_rot_z
 
     harsher_rot_w, harsher_rot_x, harsher_rot_y, harsher_rot_z = get_rots(
         points, lookahead_points=40, slerp_val=0.1
@@ -776,51 +868,6 @@ def optimize_smoothness(
         found_max_smoothness = True
 
     return dfs
-
-
-def generate_df_and_eval_track_limit(tel, s_divisor, fps, track_edges):
-    df = get_driver_df(tel, s_divisor, fps)
-    in_limits = in_track_limits(df, track_edges)
-
-    return df, in_limits
-
-
-def optimize_smoothness_concurrent(
-    track_edges: pd.DataFrame, fps: int, driver_tels: dict[str, Telemetry]
-):
-    driver_dfs = {}
-
-    s_divisor = 3
-    max_s_divisor = 10
-    found_optimal = False
-
-    while not found_optimal:
-        log_info(f"Checking s_divisor: {s_divisor}")
-        found_optimal = True
-
-        with ThreadPoolExecutor() as executor:
-            futures = {
-                executor.submit(
-                    generate_df_and_eval_track_limit, tel, s_divisor, fps, track_edges
-                ): driver
-                for driver, tel in driver_tels.items()
-            }
-
-            for future in concurrent.futures.as_completed(futures):
-                df, in_limits = future.result()
-                if not in_limits:
-                    found_optimal = False
-
-                driver_dfs[futures[future]] = df
-
-        if not found_optimal:
-            s_divisor += 1
-
-        if s_divisor > max_s_divisor:
-            log_warn("Using max smoothness, this means something is probably wrong...")
-            break
-
-    return driver_dfs
 
 
 def _get_sectors_info(
@@ -942,6 +989,17 @@ def _get_sectors_info(
     )
 
 
+def get_drivers_included_in_run(
+    drivers_from_tels: list[str], config: Config
+) -> set[str]:
+    if config["type"] == "rest-of-field":
+        return set(drivers_from_tels)
+    elif not config["mixed_mode"]["enabled"]:
+        return set(config["drivers"])
+    else:
+        return set(config["mixed_mode"]["drivers"].keys())
+
+
 # in order to run this function, we need to already have the track data for this track and year
 # because this will be necessary to ensure that we have the correct smoothness so the movement
 # looks natural but also so that we are within track limits
@@ -961,13 +1019,20 @@ def main(
         track_data.outer_points,
     )
 
+    drivers_included_in_run = get_drivers_included_in_run(
+        list([driver.last_name for driver in driver_tels.keys()]), config
+    )
+
     driver_dfs: dict[Driver, pd.DataFrame] = {}
     for driver, tel in driver_tels.items():
-        driver_df = get_driver_df(tel, 3, config["render"]["fps"])
-        driver_df = add_start_buffer(driver_df, config["render"]["start_buffer_frames"])
-        driver_df = add_end_buffer(driver_df, config["render"]["end_buffer_frames"])
+        if driver.last_name in drivers_included_in_run:
+            driver_df = get_driver_df(tel, 3, config["render"]["fps"], track_data)
+            driver_df = add_start_buffer(
+                driver_df, config["render"]["start_buffer_frames"]
+            )
+            driver_df = add_end_buffer(driver_df, config["render"]["end_buffer_frames"])
 
-        driver_dfs[driver] = driver_df
+            driver_dfs[driver] = driver_df
 
     for driver, driver_df in driver_dfs.items():
         driver_df = add_car_rots(driver_df)

@@ -219,25 +219,25 @@ class StatusTrack:
             # find vec between cur and prev
             next = points[i + 1] if i < len(points) - 1 else points[0]
             cur = points[i]
-            vec = (next[0] - cur[0], next[1] - cur[1])
+            vec = (next[0] - cur[0], next[1] - cur[1], next[2] - cur[2])
 
             # find the perpendicular
-            perp = (-vec[1], vec[0])
-            length = math.sqrt(perp[0] ** 2 + perp[1] ** 2)
-            perp_norm = (perp[0] / length, perp[1] / length, 0)
+            perp = (-vec[1], vec[0], 0)
+            length = math.sqrt(perp[0] ** 2 + perp[1] ** 2 + perp[2] ** 2)
+            perp_norm = (perp[0] / length, perp[1] / length, perp[2] / length)
 
             spread_a.append(
                 (
                     cur[0] + perp_norm[0] * spread_val,
                     cur[1] + perp_norm[1] * spread_val,
-                    0,
+                    cur[2] + perp_norm[2] * spread_val,
                 )
             )
             spread_b.append(
                 (
                     cur[0] - perp_norm[0] * spread_val,
                     cur[1] - perp_norm[1] * spread_val,
-                    0,
+                    cur[2] - perp_norm[2] * spread_val,
                 )
             )
         return spread_a, spread_b
@@ -385,30 +385,29 @@ class StatusTrack:
 
         return sectors_parent
 
-    def _setup(self) -> Tuple[float, float]:
-        assert self.state.load_data is not None
+    def _wipe_z_vals(self, points: list[tuple[float, float, float]]):
+        return [(x, y, 0.0) for x, y, _ in points]
+
+    def _setup(self):
+        load_data = self.state.load_data
+        assert load_data is not None
+        focused_driver = load_data.run_drivers.focused_driver
 
         driver_dfs_copy: dict[Driver, DataFrame] = {}
         if self.config["type"] == "rest-of-field":
-            assert self.state.load_data.focused_driver is not None, (
-                "Focused driver must be assigned before setting up status track."
-            )
-            driver_dfs_copy[self.state.load_data.focused_driver] = (
-                self.state.load_data.driver_dfs[
-                    self.state.load_data.focused_driver
-                ].copy()
-            )
+            driver_dfs_copy[focused_driver] = load_data.run_drivers.driver_run_data[
+                focused_driver
+            ].sped_point_df.copy()
         else:
-            for driver, driver_df in self.state.load_data.driver_dfs.items():
-                driver_dfs_copy[driver] = driver_df.copy()
-
-        assert self.state.load_data.track_data is not None, (
-            "Track data must be assigned before setting up status track."
-        )
+            for (
+                driver,
+                run_driver_data,
+            ) in load_data.run_drivers.driver_run_data.items():
+                driver_dfs_copy[driver] = run_driver_data.sped_point_df.copy()
 
         track_data_copy, driver_dfs_copy = self._orient(
-            self.state.load_data.track_data,
-            self.state.load_data.circuit_info,
+            load_data.track_data,
+            load_data.circuit_info,
             driver_dfs_copy,
         )
 
@@ -417,6 +416,8 @@ class StatusTrack:
         )
 
         inner_points_copy, outer_points_copy = self._widen_track(track_data_copy, 10)
+        # inner_points_copy = self._wipe_z_vals(inner_points_copy)
+        # outer_points_copy = self._wipe_z_vals(outer_points_copy)
         track_width, track_height = self._get_track_dimensions(
             inner_points_copy, outer_points_copy
         )
@@ -485,40 +486,43 @@ class StatusTrack:
             cur_as = outer_spread_b
             cur_bs = inner_spread_b
 
-        status_start_finish_line = self._add_start_finish_line(cur_as, cur_bs)
-        background_obj = self._add_background(inner_points_copy, outer_points_copy)
+        # status_start_finish_line = self._add_start_finish_line(cur_as, cur_bs)
+        # background_obj = self._add_background(inner_points_copy, outer_points_copy)
 
         self._scale(optimal_scale, inner_spread_obj)
         self._scale(optimal_scale, outer_spread_obj)
-        self._scale(optimal_scale, status_start_finish_line)
-        self._scale(optimal_scale, background_obj)
+        # self._scale(optimal_scale, status_start_finish_line)
+        # self._scale(optimal_scale, background_obj)
         self._scale(optimal_scale, sectors_indicator_obj)
 
         if self.config["type"] == "rest-of-field":
-            driver, color = (
-                self.state.load_data.drivers_in_color_order[0],
-                self.state.load_data.driver_colors[0],
-            )
             indicator_dot = self._add_indicator_dot(
-                driver.last_name, color, driver_dfs_copy[driver], 0
+                focused_driver.last_name,
+                load_data.run_drivers.driver_applied_colors[focused_driver],
+                driver_dfs_copy[focused_driver],
+                0,
             )
             indicator_dot.parent = inner_spread_obj
         else:
-            for idx, (driver, color) in enumerate(
-                zip(
-                    reversed(self.state.load_data.drivers_in_color_order),
-                    reversed(self.state.load_data.driver_colors),
-                )
-            ):
+            # Get all drivers and move the focused driver to the end of the list
+            drivers = list(load_data.run_drivers.driver_run_data.keys())
+            focused_driver = load_data.run_drivers.focused_driver
+            drivers.remove(focused_driver)
+            drivers.append(focused_driver)
+
+            for idx, driver in enumerate(drivers):
                 indicator_dot = self._add_indicator_dot(
-                    driver.last_name, color, driver_dfs_copy[driver], idx
+                    driver.last_name,
+                    load_data.run_drivers.driver_applied_colors[driver],
+                    driver_dfs_copy[driver],
+                    idx,
                 )
                 indicator_dot.parent = inner_spread_obj
 
-        status_start_finish_line.parent = self.parent_empty
+        # status_start_finish_line.parent = self.parent_empty
         inner_spread_obj.parent = self.parent_empty
         outer_spread_obj.parent = self.parent_empty
-        background_obj.parent = self.parent_empty
+        # background_obj.parent = self.parent_empty
         sectors_indicator_obj.parent = self.parent_empty
 
         return scaled_track_width, scaled_track_height
@@ -753,13 +757,18 @@ class StatusTrack:
 
         x_vals = new_driver_df["X"].astype(float)
         y_vals = new_driver_df["Y"].astype(float)
+        z_vals = new_driver_df["Z"].astype(float)
 
         for i in range(len(x_vals)):
             frame = i + 1
             if is_flag:
-                indicator.location = (x_vals.iloc[i], y_vals.iloc[i], 10)
+                indicator.location = (
+                    x_vals.iloc[i],
+                    y_vals.iloc[i],
+                    z_vals.iloc[i] + 10,
+                )
             else:
-                indicator.location = (x_vals.iloc[i], y_vals.iloc[i], 0)
+                indicator.location = (x_vals.iloc[i], y_vals.iloc[i], z_vals.iloc[i])
             indicator.keyframe_insert(data_path="location", frame=frame)  # pyright: ignore
 
         return indicator

@@ -12,7 +12,7 @@ def main():
     project_root = Path(__file__).parent.absolute()
 
     os.environ["PYTHONPATH"] = (
-        f"{project_root}:{project_root}/py:{os.environ.get('PYTHONPATH', '')}"
+        f"{project_root}:{project_root}/src:{os.environ.get('PYTHONPATH', '')}"
     )
 
     is_batch_mode = len(sys.argv) > 1 and sys.argv[1] == "batch"

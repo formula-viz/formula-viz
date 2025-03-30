@@ -1,12 +1,12 @@
 from typing import Optional
 
 import bpy
+import pandas as pd
 from pandas import Timedelta
 
 from src.models.app_state import AppState
 from src.models.config import Config
-from src.models.driver import Driver
-from src.models.sectors import SectorTimes
+from src.models.driver import Driver, RunDrivers
 from src.utils import file_utils
 from src.utils.colors import hex_to_blender_rgb
 
@@ -16,18 +16,18 @@ class DriverDash:
         self,
         state: AppState,
         config: Config,
+        run_drivers: RunDrivers,
         cur_channel: int,
-        absolute_frame_to_sped_frame_map: dict[int, int],
     ):
         self.state = state
         self.config = config
+        self.run_drivers = run_drivers
         self.cur_channel = cur_channel
-        self.absolute_frame_to_sped_frame_map = absolute_frame_to_sped_frame_map
 
         self.start_frame = 1
         self.end_frame = bpy.context.scene.frame_end
 
-        self._add_driver_images()
+        self._add_driver_comps()
 
     def _add_driver_image_to_vse(
         self,
@@ -103,8 +103,7 @@ class DriverDash:
     def _add_sector_times(
         self,
         name: str,
-        driver_sectors_times_left: SectorTimes,
-        driver_sectors_times_right: SectorTimes,
+        num_drivers: int,
     ):
         def add_sector_underlines(x_offset: int):
             color = scene.sequence_editor.sequences.new_effect(
@@ -220,48 +219,51 @@ class DriverDash:
             seconds = race_time % 60
             text_strip.text = f"{minutes:01d}:{seconds:06.3f}"
 
-        assert self.state.load_data is not None
         scene = bpy.context.scene
+        run_data = self.run_drivers
+
+        driver_a = run_data.drivers[0]
+        driver_b = run_data.drivers[1]
+
+        driver_a_run = run_data.driver_run_data[driver_a]
+        driver_b_run = run_data.driver_run_data[driver_b]
+
+        absolute_to_sped_conversion = driver_a_run.absolute_frame_to_sped_frame
+
+        driver_a_sector_times = run_data.driver_sector_times[driver_a]
+        driver_b_sector_times = run_data.driver_sector_times[driver_b]
+
+        sector_times: list[tuple[Timedelta, Timedelta]] = [
+            (driver_a_sector_times.sector1, driver_b_sector_times.sector1),
+            (driver_a_sector_times.sector2, driver_b_sector_times.sector2),
+            (driver_a_sector_times.sector3, driver_b_sector_times.sector3),
+        ]
+
+        end_frames_absolute: list[tuple[int, int]] = [
+            (
+                driver_a_run.sector_1_end_absolute_frame,
+                driver_b_run.sector_1_end_absolute_frame,
+            ),
+            (
+                driver_a_run.sector_2_end_absolute_frame,
+                driver_b_run.sector_2_end_absolute_frame,
+            ),
+            (
+                driver_a_run.sector_3_end_absolute_frame,
+                driver_b_run.sector_3_end_absolute_frame,
+            ),
+        ]
+
+        end_frames_sped = []
+        for a, b in end_frames_absolute:
+            end_frames_sped.append(
+                (absolute_to_sped_conversion[a], absolute_to_sped_conversion[b])
+            )
 
         add_sector_underlines(-423)
         add_sector_underlines(122)
 
-        sectors: list[tuple[Timedelta, Timedelta]] = [
-            (driver_sectors_times_left.sector1, driver_sectors_times_right.sector1),
-            (driver_sectors_times_left.sector2, driver_sectors_times_right.sector2),
-            (driver_sectors_times_left.sector3, driver_sectors_times_right.sector3),
-        ]
         fps = self.config["render"]["fps"]
-
-        left_sector_1_start = self.config["render"]["start_buffer_frames"]
-        right_sector_1_start = self.config["render"]["start_buffer_frames"]
-
-        left_sector_2_start = self.absolute_frame_to_sped_frame_map[
-            left_sector_1_start + int(sectors[0][0].total_seconds() * fps)
-        ]
-        right_sector_2_start = self.absolute_frame_to_sped_frame_map[
-            right_sector_1_start + int(sectors[0][1].total_seconds() * fps)
-        ]
-
-        left_sector_3_start = self.absolute_frame_to_sped_frame_map[
-            left_sector_2_start + int(sectors[1][0].total_seconds() * fps)
-        ]
-        right_sector_3_start = self.absolute_frame_to_sped_frame_map[
-            right_sector_2_start + int(sectors[1][1].total_seconds() * fps)
-        ]
-
-        left_end_race = self.absolute_frame_to_sped_frame_map[
-            left_sector_3_start + int(sectors[2][0].total_seconds() * fps)
-        ]
-        right_end_race = self.absolute_frame_to_sped_frame_map[
-            right_sector_3_start + int(sectors[2][1].total_seconds() * fps)
-        ]
-
-        end_frames = [
-            (left_sector_2_start, right_sector_2_start),
-            (left_sector_3_start, right_sector_3_start),
-            (left_end_race, right_end_race),
-        ]
 
         cur_left_loc: tuple[float, float] = (0.055, 0.10)
         cur_right_loc: tuple[float, float] = (0.555, 0.10)
@@ -269,7 +271,7 @@ class DriverDash:
         for (left_sector, right_sector), (
             left_end_sector,
             right_end_sector,
-        ) in zip(sectors, end_frames):
+        ) in zip(sector_times, end_frames_sped):
             left_behind_time = None
             right_behind_time = None
 
@@ -302,103 +304,138 @@ class DriverDash:
             )
             cur_right_loc = (cur_right_loc[0] + 0.14, cur_right_loc[1])
 
-        # total_race_time_left = (
-        #     driver_sectors_times_left.sector1.total_seconds()
-        #     + driver_sectors_times_left.sector2.total_seconds()
-        #     + driver_sectors_times_left.sector3.total_seconds()
-        # )
-        # add_final_time(
-        #     self.config["render"]["start_buffer_frames"]
-        #     + int(total_race_time_left * self.config["render"]["fps"]),
-        #     total_race_time_left,
-        #     (0.16, 0.04),
-        #     (1, 1, 1, 1),
-        # )
+        driver_sector_times = run_data.driver_sector_times
 
-        # total_race_time_right = (
-        #     driver_sectors_times_right.sector1.total_seconds()
-        #     + driver_sectors_times_right.sector2.total_seconds()
-        #     + driver_sectors_times_right.sector3.total_seconds()
-        # )
-        # add_final_time(
-        #     self.config["render"]["start_buffer_frames"]
-        #     + int(total_race_time_right * self.config["render"]["fps"]),
-        #     total_race_time_right,
-        #     (0.67, 0.04),
-        #     (1, 1, 1, 1),
-        # )
+        driver_a_sector_times = driver_sector_times[driver_a]
+        driver_a_total_time = (
+            driver_a_sector_times.sector1
+            + driver_a_sector_times.sector2
+            + driver_a_sector_times.sector3
+        )
+        driver_a_end_frame = 0
+        is_before = True
+        for i, row in enumerate(driver_a_run.sped_point_df.iterrows()):
+            if pd.notna(row[1].get("Time")):
+                if not is_before:
+                    # If we were previously in a null section and now have Time data again
+                    driver_a_end_frame = i + 1
+            else:
+                is_before = False
 
-    def _add_driver_images(self):
-        assert self.state.load_data is not None
+        driver_b_sector_times = driver_sector_times[driver_b]
+        driver_b_total_time = (
+            driver_b_sector_times.sector1
+            + driver_b_sector_times.sector2
+            + driver_b_sector_times.sector3
+        )
+        driver_b_end_frame = 0
+        is_before = True
+        for i, row in enumerate(driver_b_run.sped_point_df.iterrows()):
+            if pd.notna(row[1].get("Time")):
+                if not is_before:
+                    # If we were previously in a null section and now have Time data again
+                    driver_b_end_frame = i + 1
+            else:
+                is_before = False
 
-        if self.config["render"]["is_shorts_output"]:
-            # Get current scene
-            scene = bpy.context.scene
+        add_final_time(
+            driver_a_end_frame,
+            driver_a_total_time.total_seconds(),
+            (0.16, 0.04),
+            (1, 1, 1, 1),
+        )
 
-            # Ensure we have a sequence editor
-            if not scene.sequence_editor:
-                scene.sequence_editor_create()
+        add_final_time(
+            driver_b_end_frame,
+            driver_b_total_time.total_seconds(),
+            (0.67, 0.04),
+            (1, 1, 1, 1),
+        )
 
-            # Set up VSE if we have 2 drivers
-            if len(self.state.load_data.drivers_in_color_order) == 2:
-                driver_a = self.state.load_data.drivers_in_color_order[0]
-                driver_b = self.state.load_data.drivers_in_color_order[1]
+    def _add_driver_comps(self):
+        load_data = self.state.load_data
+        assert load_data is not None
 
-                # Add driver A image
-                driver_image_a = self._add_driver_image_to_vse(
-                    self.state.load_data.drivers_in_color_order[0],
-                    channel=self.cur_channel,
-                    position_x=-275,
-                    position_y=-500,
-                    scale=0.5,
+        # Get current scene
+        scene = bpy.context.scene
+
+        # Ensure we have a sequence editor
+        if not scene.sequence_editor:
+            scene.sequence_editor_create()
+
+        if len(load_data.run_drivers.drivers) == 2:
+            driver_a = load_data.run_drivers.drivers[0]
+            driver_b = load_data.run_drivers.drivers[1]
+
+            driver_a_color = load_data.run_drivers.driver_applied_colors[driver_a]
+            driver_b_color = load_data.run_drivers.driver_applied_colors[driver_b]
+
+            # Position and scale adjustments based on shorts output
+            if self.config["render"]["is_shorts_output"]:
+                image_x_a, image_y_a, image_scale_a = -275, -500, 0.5
+                image_x_b, image_y_b, image_scale_b = 275, -500, 0.5
+                color_x_a, color_y_a, color_scale_x_a, color_scale_y_a = (
+                    -270,
+                    -700,
+                    0.43,
+                    0.02,
                 )
-                self.cur_channel += 1
-
-                # Add driver A color bar
-                driver_stopper_a = self._add_color_strip_to_vse(
-                    name="DriverAColor",
-                    channel=self.cur_channel,
-                    position_x=-270,
-                    position_y=-700,
-                    scale_x=0.43,
-                    scale_y=0.02,
-                    color=hex_to_blender_rgb(self.state.load_data.driver_colors[0]),
+                color_x_b, color_y_b, color_scale_x_b, color_scale_y_b = (
+                    270,
+                    -700,
+                    0.43,
+                    0.02,
                 )
-                self.cur_channel += 1
+            else:
+                image_x_a, image_y_a, image_scale_a = 0, 0, 0.7
+                image_x_b, image_y_b, image_scale_b = 0, 0, 0.7
+                color_x_a, color_y_a, color_scale_x_a, color_scale_y_a = 0, 0, 0.7, 0.05
+                color_x_b, color_y_b, color_scale_x_b, color_scale_y_b = 0, 0, 0.7, 0.05
 
-                # Add driver B image
-                driver_image_b = self._add_driver_image_to_vse(
-                    self.state.load_data.drivers_in_color_order[1],
-                    channel=self.cur_channel,
-                    position_x=275,
-                    position_y=-500,
-                    scale=0.5,
-                )
-                self.cur_channel += 1
+            # Add driver A image
+            self._add_driver_image_to_vse(
+                driver_a,
+                channel=self.cur_channel,
+                position_x=image_x_a,
+                position_y=image_y_a,
+                scale=image_scale_a,
+            )
+            self.cur_channel += 1
 
-                # Add driver B color bar
-                driver_stopper_b = self._add_color_strip_to_vse(
-                    name="DriverBColor",
-                    channel=self.cur_channel,
-                    position_x=270,
-                    position_y=-700,
-                    scale_x=0.43,
-                    scale_y=0.02,
-                    color=hex_to_blender_rgb(self.state.load_data.driver_colors[1]),
-                )
-                self.cur_channel += 1
+            # Add driver A color bar
+            self._add_color_strip_to_vse(
+                name="DriverAColor",
+                channel=self.cur_channel,
+                position_x=color_x_a,
+                position_y=color_y_a,
+                scale_x=color_scale_x_a,
+                scale_y=color_scale_y_a,
+                color=hex_to_blender_rgb(driver_a_color),
+            )
+            self.cur_channel += 1
 
-                driver_sectors_times_left = self.state.load_data.driver_sector_times[
-                    driver_a
-                ]
-                driver_sectors_times_right = self.state.load_data.driver_sector_times[
-                    driver_b
-                ]
+            # Add driver B image
+            self._add_driver_image_to_vse(
+                driver_b,
+                channel=self.cur_channel,
+                position_x=image_x_b,
+                position_y=image_y_b,
+                scale=image_scale_b,
+            )
+            self.cur_channel += 1
 
-                # Add driver A sector time
-                driver_sector_time_a = self._add_sector_times(
-                    name="DriverASectorTime",
-                    driver_sectors_times_left=driver_sectors_times_left,
-                    driver_sectors_times_right=driver_sectors_times_right,
-                )
-                self.cur_channel += 1
+            # Add driver B color bar
+            self._add_color_strip_to_vse(
+                name="DriverBColor",
+                channel=self.cur_channel,
+                position_x=color_x_b,
+                position_y=color_y_b,
+                scale_x=color_scale_x_b,
+                scale_y=color_scale_y_b,
+                color=hex_to_blender_rgb(driver_b_color),
+            )
+            self.cur_channel += 1
+
+            # Add driver A sector time
+            self._add_sector_times(name="DriverASectorTime", num_drivers=2)
+            self.cur_channel += 1

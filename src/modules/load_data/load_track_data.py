@@ -179,18 +179,24 @@ def smooth_points(track_points: DataFrame) -> DataFrame:
     """
 
     def smooth_closed_loop(
-        x: list[float], y: list[float], num_points: int = 10000, smoothing: float = 100
-    ) -> tuple[list[float], list[float]]:
-        tck, _ = splprep([x, y], s=smoothing, per=True)
+        x: list[float],
+        y: list[float],
+        z: list[float],
+        num_points: int = 10000,
+        smoothing: float = 100,
+    ) -> tuple[list[float], list[float], list[float]]:
+        tck, _ = splprep([x, y, z], s=smoothing, per=True)
         u_new = np.linspace(0, 1, num_points)
-        smooth_x, smooth_y = splev(u_new, tck)
-        return smooth_x, smooth_y  # pyright: ignore
+        smooth_x, smooth_y, smooth_z = splev(u_new, tck)
+        return smooth_x, smooth_y, smooth_z  # pyright: ignore
 
     lefts_x: list[float] = track_points["lefts_X"].tolist()
     lefts_y: list[float] = track_points["lefts_Y"].tolist()
+    lefts_z: list[float] = track_points["lefts_Z"].tolist()
 
     rights_x: list[float] = track_points["rights_X"].tolist()
     rights_y: list[float] = track_points["rights_Y"].tolist()
+    rights_z: list[float] = track_points["rights_Z"].tolist()
 
     # Perform circular shift equivalent to np.roll
     shift_amount = len(lefts_x) // 3
@@ -199,15 +205,16 @@ def smooth_points(track_points: DataFrame) -> DataFrame:
     rights_x = rights_x[shift_amount:] + rights_x[:shift_amount]
     rights_y = rights_y[shift_amount:] + rights_y[:shift_amount]
 
-    lefts_x, lefts_y = smooth_closed_loop(lefts_x, lefts_y)
+    lefts_x, lefts_y, lefts_z = smooth_closed_loop(lefts_x, lefts_y, lefts_z)
 
     prev_point = None
-    for i, (left_x, left_y) in enumerate(zip(lefts_x, lefts_y)):
-        cur_point = (left_x, left_y)
+    for i, (left_x, left_y, left_z) in enumerate(zip(lefts_x, lefts_y, lefts_z)):
+        cur_point = (left_x, left_y, left_z)
         if prev_point:
             distance = math.sqrt(
                 (prev_point[0] - cur_point[0]) ** 2
                 + (prev_point[1] - cur_point[1]) ** 2
+                + (prev_point[2] - cur_point[2]) ** 2
             )
             assert distance < 1.0, (
                 f"Distance between left points {i} and {i + 1} out of {len(lefts_x)} is {distance}"
@@ -220,61 +227,84 @@ def smooth_points(track_points: DataFrame) -> DataFrame:
     # overlap and also make the width more constant around the track.
     rights_x: list[float] = []
     rights_y: list[float] = []
+    rights_z: list[float] = []
     track_width = 12  # this is hardcoded from how we generate the track
     for i in range(len(lefts_x)):
         next_idx = i + 1 if i + 1 < len(lefts_x) else i - 1
-        cur_point_x, cur_point_y = lefts_x[i], lefts_y[i]
-        next_point_x, next_point_y = lefts_x[next_idx], lefts_y[next_idx]
+        cur_point_x, cur_point_y, cur_point_z = lefts_x[i], lefts_y[i], lefts_z[i]
+        next_point_x, next_point_y, next_point_z = (
+            lefts_x[next_idx],
+            lefts_y[next_idx],
+            lefts_z[next_idx],
+        )
 
         vec_x = next_point_x - cur_point_x
         vec_y = next_point_y - cur_point_y
-        mag = (vec_x**2 + vec_y**2) ** 0.5
+        vec_z = next_point_z - cur_point_z
+        mag = (vec_x**2 + vec_y**2 + vec_z**2) ** 0.5
         unit_vec_x = vec_x / mag
         unit_vec_y = vec_y / mag
+        unit_vec_z = vec_z / mag
 
-        perp_vec_x, perp_vec_y = unit_vec_y, -unit_vec_x
+        perp_vec_x, perp_vec_y, perp_vec_z = unit_vec_y, -unit_vec_x, 0
         # we go track width in each direction
         a_x = cur_point_x - perp_vec_x * track_width
         a_y = cur_point_y - perp_vec_y * track_width
+        a_z = cur_point_z - perp_vec_z * track_width
 
         b_x = cur_point_x + perp_vec_x * track_width
         b_y = cur_point_y + perp_vec_y * track_width
+        b_z = cur_point_z + perp_vec_z * track_width
 
         # if this is the first, we need to choose the point closest to lefts[0]
         if i == 0:
-            left_x, left_y = lefts_x[0], lefts_y[0]
+            left_x, left_y, left_z = lefts_x[0], lefts_y[0], lefts_z[0]
 
-            a_distance = math.sqrt((left_x - a_x) ** 2 + (left_y - a_y) ** 2)
-            b_distance = math.sqrt((left_x - b_x) ** 2 + (left_y - b_y) ** 2)
+            a_distance = math.sqrt(
+                (left_x - a_x) ** 2 + (left_y - a_y) ** 2 + (left_z - a_z) ** 2
+            )
+            b_distance = math.sqrt(
+                (left_x - b_x) ** 2 + (left_y - b_y) ** 2 + (left_z - b_z) ** 2
+            )
             if a_distance < b_distance:
                 rights_x.append(a_x)
                 rights_y.append(a_y)
+                rights_z.append(a_z)
             else:
                 rights_x.append(b_x)
                 rights_y.append(b_y)
+                rights_z.append(b_z)
         elif i == len(lefts_x) - 1:
             rights_x.append(rights_x[0])
             rights_y.append(rights_y[0])
+            rights_z.append(rights_z[0])
         else:
             # find the closest point to the last right point
-            last_x, last_y = rights_x[-1], rights_y[-1]
+            last_x, last_y, last_z = rights_x[-1], rights_y[-1], rights_z[-1]
 
-            a_distance = math.sqrt((last_x - a_x) ** 2 + (last_y - a_y) ** 2)
-            b_distance = math.sqrt((last_x - b_x) ** 2 + (last_y - b_y) ** 2)
+            a_distance = math.sqrt(
+                (last_x - a_x) ** 2 + (last_y - a_y) ** 2 + (last_z - a_z) ** 2
+            )
+            b_distance = math.sqrt(
+                (last_x - b_x) ** 2 + (last_y - b_y) ** 2 + (last_z - b_z) ** 2
+            )
             if a_distance < b_distance:
                 rights_x.append(a_x)
                 rights_y.append(a_y)
+                rights_z.append(a_z)
             else:
                 rights_x.append(b_x)
                 rights_y.append(b_y)
+                rights_z.append(b_z)
 
     prev_point = None
-    for i, (right_x, right_y) in enumerate(zip(rights_x, rights_y)):
-        cur_point = (right_x, right_y)
+    for i, (right_x, right_y, right_z) in enumerate(zip(rights_x, rights_y, rights_z)):
+        cur_point = (right_x, right_y, right_z)
         if prev_point:
             distance = math.sqrt(
                 (prev_point[0] - cur_point[0]) ** 2
                 + (prev_point[1] - cur_point[1]) ** 2
+                + (prev_point[2] - cur_point[2]) ** 2
             )
             assert distance < 1.5, (
                 f"Distance between right points {i} and {i + 1} out of {len(rights_x)} is {distance}"
@@ -285,10 +315,10 @@ def smooth_points(track_points: DataFrame) -> DataFrame:
         {
             "lefts_X": lefts_x,
             "lefts_Y": lefts_y,
-            "lefts_Z": np.zeros(len(lefts_x)),
+            "lefts_Z": lefts_z,
             "rights_X": rights_x,
             "rights_Y": rights_y,
-            "rights_Z": np.zeros(len(rights_x)),
+            "rights_Z": rights_z,
         }
     )
 

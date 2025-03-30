@@ -7,7 +7,12 @@ import bpy
 
 from src.models.app_state import AppState
 from src.models.config import Config
-from src.modules.video_edit import add_background_music, add_driver_dash, add_timer
+from src.modules.video_edit import (
+    add_background_music,
+    add_driver_dash_new,
+    add_fast_forward_indicator,
+    add_timer,
+)
 from src.utils import file_utils
 from src.utils.logger import log_info
 
@@ -49,7 +54,7 @@ def edit_video(config: Config, app_state: AppState):
     sequences = bpy.context.scene.sequence_editor.sequences
     video_strip = sequences.new_movie(
         name="Formula Viz Video",
-        filepath=str(app_state.render_output_path),
+        filepath=str(file_utils.project_paths.OUTPUT_DIR / config["render"]["output"]),
         channel=1,
         frame_start=1,
     )
@@ -58,44 +63,47 @@ def edit_video(config: Config, app_state: AppState):
     bpy.context.scene.frame_start = 1
     bpy.context.scene.frame_end = video_strip.frame_final_duration
 
-    log_info(f"Added video file: {app_state.render_output_path}")
+    log_info(
+        f"Added video file: {file_utils.project_paths.OUTPUT_DIR / config['render']['output']}"
+    )
 
-    cur_sped_frame = 0
-    absolute_frame_to_sped_frame_map = {}
-    driver_df = app_state.load_data.driver_dfs[app_state.load_data.focused_driver]
+    load_data = app_state.load_data
+    assert load_data is not None
+    run_drivers = load_data.run_drivers
 
-    # Check if any frames are missing the FastForward value
-    if "FastForward" not in driver_df.columns:
-        log_info(
-            "Warning: FastForward column is missing. Setting all frames to normal speed."
-        )
-        driver_df["FastForward"] = False
-    elif driver_df["FastForward"].isna().any():
-        log_info(
-            "Warning: Some frames have missing FastForward values. Setting those to False."
-        )
-        driver_df["FastForward"].fillna(False)
+    focused_driver_run_data = run_drivers.driver_run_data[run_drivers.focused_driver]
 
-    for index, row in driver_df.iterrows():
-        print(row["FastForward"])
-        if row["FastForward"] is False:
-            cur_sped_frame += 1
-        absolute_frame_to_sped_frame_map[index] = cur_sped_frame
+    focused_driver_sector_times = run_drivers.driver_sector_times[
+        run_drivers.focused_driver
+    ]
+    focused_driver_total_time = (
+        focused_driver_sector_times.sector1
+        + focused_driver_sector_times.sector2
+        + focused_driver_sector_times.sector3
+    )
 
-    print("Count False values: ", driver_df["FastForward"].value_counts()[False])
-    print("Total sped frames: ", cur_sped_frame)
+    sped_point_df_with_times = focused_driver_run_data.sped_point_df
 
     cur_channel = 2
-    driver_dash = add_driver_dash.DriverDash(
-        app_state, config, cur_channel, absolute_frame_to_sped_frame_map
+    driver_dash = add_driver_dash_new.DriverDash(
+        app_state,
+        config,
+        run_drivers,
+        cur_channel,
     )
     cur_channel = driver_dash.cur_channel + 1
 
     add_timer.add_frame_counter(
         config=config,
-        end_frame=video_strip.frame_final_duration,
+        sped_point_df_with_times=sped_point_df_with_times,
+        focused_driver_total_time=focused_driver_total_time,
         start_frame=1,
         channel=cur_channel,
+    )
+    cur_channel += 1
+
+    add_fast_forward_indicator.add_fast_forward_indicator(
+        run_drivers=run_drivers, cur_channel=cur_channel
     )
     cur_channel += 1
 
