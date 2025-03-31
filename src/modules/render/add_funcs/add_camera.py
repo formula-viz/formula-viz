@@ -25,7 +25,7 @@ def scale_frames(df_for_cam: DataFrame):
 
     """
     scale_factor = 0.8
-    z_up = 50
+    z_up = 75
 
     df_for_cam_x = df_for_cam["X"].astype(float)
     df_for_cam_y = df_for_cam["Y"].astype(float)

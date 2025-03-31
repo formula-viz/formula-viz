@@ -235,7 +235,6 @@ def add_driver_keyframes(driver_obj, df):
     y_values = df["Y"]
     z_values = df["Z"]
 
-    rot_w = df["RotW"]
     rot_x = df["RotX"]
     rot_y = df["RotY"]
     rot_z = df["RotZ"]
@@ -248,11 +247,7 @@ def add_driver_keyframes(driver_obj, df):
     for i in range(len(df)):
         cur_frame = i + 1
         point = mathutils.Vector((x_values.iloc[i], y_values.iloc[i], z_values.iloc[i]))
-
-        rot_quat = mathutils.Quaternion(
-            (rot_w.iloc[i], rot_x.iloc[i], rot_y.iloc[i], rot_z.iloc[i])
-        )
-        rot_eul = rot_quat.to_euler()
+        rot_eul = mathutils.Vector((rot_x.iloc[i], rot_y.iloc[i], rot_z.iloc[i]))
 
         driver_loc_keyframes.append((point, cur_frame))
         driver_rot_keyframes.append((rot_eul, cur_frame))

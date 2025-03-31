@@ -460,8 +460,8 @@ def create_white_lines(
         vec_length = math.sqrt(vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2)
         normalized_vec = (vec[0] / vec_length, vec[1] / vec_length, vec[2] / vec_length)
 
-        trace_point_dist = 0.2
-        fill_point_dist = 0.4
+        trace_point_dist = 0.25
+        fill_point_dist = 0.55
 
         trace_point = (
             point1[0] + normalized_vec[0] * trace_point_dist,
@@ -498,7 +498,7 @@ def main(config: Config):
     track_edges = smooth_points(track_edges)
 
     inner_points, outer_points = assign_inner_outer(track_edges)
-    curb_width = 2
+    curb_width = 1.5
     inner_curb_points = curb(inner_points, outer_points, curb_width)
     outer_curb_points = curb(outer_points, inner_points, curb_width)
 

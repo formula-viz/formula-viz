@@ -16,6 +16,7 @@ Main functionality includes:
 The processed data can be used to create 3D visualizations of qualifying laps.
 """
 
+import math
 import os
 from datetime import timedelta
 from typing import Optional
@@ -715,88 +716,106 @@ def add_end_buffer(driver_df, end_buffer_frames):
 
 
 def add_car_rots(df):
-    """Add car rotation quaternions to the DataFrame.
-
-    Calculates two sets of quaternion rotations for the car:
-    1. Standard rotations with more smoothing for natural-looking movement
-    2. "Harsher" rotations with less smoothing for more responsive cornering visualization
-
-    The rotations are calculated by looking ahead at future positions and creating
-    a direction vector, then converting this to a quaternion rotation. Spherical
-    linear interpolation (SLERP) is used to smooth transitions between rotations.
-
-    Args:
-        df: DataFrame with X, Y, Z position data
-
-    Returns:
-        DataFrame with added rotation quaternion columns (RotW, RotX, RotY, RotZ)
-        and harsher rotation quaternions (HarsherRotW, HarsherRotX, HarsherRotY, HarsherRotZ)
-
-    """
+    """Add car rotation data to the DataFrame using Euler angles for smoother transitions."""
     points = [(df["X"][i], df["Y"][i], df["Z"][i]) for i in range(len(df))]
 
-    def get_rots(points, lookahead_points=20, slerp_val=0.1):
-        # Previous rotation quaternion for SLERP
-        prev_rot = None
-        rot_w = []
-        rot_x = []
-        rot_y = []
-        rot_z = []
+    def get_euler_rots(points, lookahead_points=20, max_angle_change=math.radians(5)):
+        # Lists to store our Euler components
+        rot_x, rot_y, rot_z = [], [], []
+
+        # Previous Euler angles for comparison
+        prev_euler = None
 
         for i, point in enumerate(points):
-            # Define how far ahead we look based on available points
-            lookahead = min(lookahead_points, len(points) - i - 1)
+            # Calculate lookahead based on distance
+            total_distance = 0
+            lookahead = 0
+            while total_distance < 5 and lookahead + i < len(points) - 1:
+                total_distance += (
+                    mathutils.Vector(points[i + lookahead])
+                    - mathutils.Vector(points[i + lookahead + 1])
+                ).length
+                lookahead += 1
 
+            lookahead = min(lookahead, len(points) - i - 1)
+
+            # Calculate direction vector
             combined_pos = mathutils.Vector(point)
             for j in range(1, lookahead + 1):
                 combined_pos += mathutils.Vector(points[i + j])
-
             combined_pos /= lookahead + 1
             direction = combined_pos - mathutils.Vector(point)
 
-            # Calculate rotation to track direction
-            rot_quat = direction.to_track_quat("-Y", "Z")
+            # # Skip if direction is too small (car not moving)
+            # if direction.length < 0.001:
+            #     # Use previous rotation if available, otherwise default
+            #     if i > 0:
+            #         rot_x.append(rot_x[-1])
+            #         rot_y.append(rot_y[-1])
+            #         rot_z.append(rot_z[-1])
+            #     else:
+            #         # Default orientation (forward along Y axis)
+            #         rot_x.append(0.0)
+            #         rot_y.append(0.0)
+            #         rot_z.append(0.0)
+            #     continue
 
-            if prev_rot and rot_quat:
-                # Interpolate between previous and current quaternion
-                rot_quat = prev_rot.slerp(rot_quat, slerp_val)
+            # Calculate rotation quaternion, then convert to Euler
+            current_quat = direction.to_track_quat("-Y", "Z")
+            current_euler = current_quat.to_euler()
 
-            rot_w.append(rot_quat.w)
-            rot_x.append(rot_quat.x)
-            rot_y.append(rot_quat.y)
-            rot_z.append(rot_quat.z)
+            if prev_euler:
+                # Check each axis individually and limit changes
+                limited_euler = mathutils.Euler()
 
-            # Update previous rotation
-            prev_rot = rot_quat
+                for axis in range(3):  # X, Y, Z
+                    # Calculate angle difference for this axis
+                    angle_diff = current_euler[axis] - prev_euler[axis]
 
-        return rot_w, rot_x, rot_y, rot_z
+                    # Normalize angle difference to -π to π range
+                    while angle_diff > math.pi:
+                        angle_diff -= 2 * math.pi
+                    while angle_diff < -math.pi:
+                        angle_diff += 2 * math.pi
 
-    rot_w, rot_x, rot_y, rot_z = get_rots(points)
-    df["RotW"] = rot_w
+                    # Check if change is too large (potential outlier)
+                    if abs(angle_diff) > math.radians(30):
+                        # Likely an outlier - keep previous angle
+                        limited_euler[axis] = prev_euler[axis]
+                    elif abs(angle_diff) > max_angle_change:
+                        # Significant change - limit to max_angle_change
+                        limited_euler[axis] = prev_euler[axis] + math.copysign(
+                            max_angle_change, angle_diff
+                        )
+                    else:
+                        # Normal change - allow it
+                        limited_euler[axis] = prev_euler[axis] + angle_diff
+
+                # Store the Euler angles directly
+                rot_x.append(limited_euler.x)
+                rot_y.append(limited_euler.y)
+                rot_z.append(limited_euler.z)
+
+                # Update prev_euler for next iteration
+                prev_euler = limited_euler
+            else:
+                # First frame - use calculated Euler directly
+                rot_x.append(current_euler.x)
+                rot_y.append(current_euler.y)
+                rot_z.append(current_euler.z)
+
+                # Initialize prev_euler
+                prev_euler = current_euler
+
+        return rot_x, rot_y, rot_z
+
+    # Get Euler rotations
+    rot_x, rot_y, rot_z = get_euler_rots(points)
+
+    # Add to dataframe
     df["RotX"] = rot_x
     df["RotY"] = rot_y
     df["RotZ"] = rot_z
-
-    (
-        less_lookahead_rot_w,
-        less_lookahead_rot_x,
-        less_lookahead_rot_y,
-        less_lookahead_rot_z,
-    ) = get_rots(points, lookahead_points=5, slerp_val=0.1)
-
-    df["LessLookaheadRotW"] = less_lookahead_rot_w
-    df["LessLookaheadRotX"] = less_lookahead_rot_x
-    df["LessLookaheadRotY"] = less_lookahead_rot_y
-    df["LessLookaheadRotZ"] = less_lookahead_rot_z
-    # df["RotZ"] = less_lookahead_rot_z
-
-    harsher_rot_w, harsher_rot_x, harsher_rot_y, harsher_rot_z = get_rots(
-        points, lookahead_points=40, slerp_val=0.1
-    )
-    df["HarsherRotW"] = [h - r for h, r in zip(harsher_rot_w, rot_w)]
-    df["HarsherRotX"] = [h - r for h, r in zip(harsher_rot_x, rot_x)]
-    df["HarsherRotY"] = [h - r for h, r in zip(harsher_rot_y, rot_y)]
-    df["HarsherRotZ"] = [h - r for h, r in zip(harsher_rot_z, rot_z)]
 
     return df
 

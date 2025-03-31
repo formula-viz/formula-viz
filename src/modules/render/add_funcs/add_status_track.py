@@ -17,7 +17,7 @@ from src.models.app_state import AppState
 from src.models.config import Config
 from src.models.driver import Driver
 from src.models.track_data import TrackData
-from src.modules.render.add_funcs.add_track import create_material, create_planes
+from src.modules.render.add_funcs.add_track import create_planes
 from src.modules.render.add_funcs.add_track_idx_line import add_track_idx_line
 from src.utils import file_utils
 from src.utils.colors import (
@@ -27,6 +27,7 @@ from src.utils.colors import (
     hex_to_blender_rgb,
 )
 from src.utils.logger import log_info
+from src.utils.materials import create_material
 
 # In the shorts mode, if we have a dot object, 1 meter away from the camera,
 # an x value of 0.2 will be the edge and a y value of 0.36 will be the top edge

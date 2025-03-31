@@ -12,8 +12,8 @@ from src.modules.render.add_funcs import (
     add_camera_plane,
     add_driver_objects,
     add_formula_viz_car,
+    add_light,
     add_status_track,
-    add_sun,
     add_track,
     add_track_idx_line,
 )
@@ -79,7 +79,7 @@ class AbstractRenderer(ABC):
         for material in bpy.data.materials:
             bpy.data.materials.remove(material, do_unlink=True)  # type: ignore
 
-        add_sun.main()
+        add_light.main()
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[  # pyright: ignore
             0
         ].default_value = (0.045, 0.046, 0.051, 1)  # pyright: ignore

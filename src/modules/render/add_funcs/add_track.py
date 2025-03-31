@@ -8,10 +8,8 @@ import bpy
 
 from src.models.app_state import AppState
 from src.models.sectors import SectorsInfo
-from src.utils.colors import MainTrackColor
 from src.utils.materials import (
     create_asphalt_material,
-    create_material,
 )
 
 
@@ -317,8 +315,8 @@ def create_planes_curb(
     in_curve = False
     current_material = 1  # Start with curbstone_a_mat (index 1)
     accumulated_area = 0.0
-    target_area_a = 5.0  # 5 square meters for curbstone A
-    target_area_b = 4.0  # 2 square meters for curbstone B
+    target_area_a = 5.0
+    target_area_b = 3.5
 
     # First pass - identify continuous sections with the same material
     current_section = {"material": 0, "start": 0, "end": 0}
@@ -529,8 +527,6 @@ def main(state: AppState) -> None:
         bpy.context.view_layer.layer_collection.children[-1]  # pyright: ignore
     )
 
-    track_mat = create_material(MainTrackColor.get_scene_rgb(), "Main", 0.5)
-    # curb_mat = create_material((0, 0, 0), "Curb")
     curb_mat = create_asphalt_material((0.01, 0.01, 0.01), "CurbAsphalt")
     red_color = (0.128, 0, 0)
     white_color = (0.76, 0.76, 0.76)
@@ -543,8 +539,8 @@ def main(state: AppState) -> None:
     # curbstone_a_mat = create_material((1, 1, 1), "CurbstoneA")
     # curbstone_b_mat = create_material((0.128, 0, 0), "CurbstoneB")
 
-    curbstone_a_mat = create_asphalt_material(red_color, "CurbstoneA")
-    curbstone_b_mat = create_asphalt_material(white_color, "CurbstoneB")
+    curbstone_a_mat = create_asphalt_material(white_color, "CurbstoneA")
+    curbstone_b_mat = create_asphalt_material(red_color, "CurbstoneB")
     line_mat = create_asphalt_material((0.5, 0.5, 0.5), "Line")
 
     assert state.load_data is not None

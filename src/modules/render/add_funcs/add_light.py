@@ -3,7 +3,7 @@
 import bpy
 
 
-def create_sun(name, location, energy=3.5, color=(0.991268, 1.0, 0.863095)):
+def create_sun(name, location, energy=1.5, color=(0.991268, 1.0, 0.863095)):
     """Create a sun light at the specified location.
 
     Args:
@@ -38,5 +38,8 @@ def main():
         bpy.context.view_layer.layer_collection.children[-1]  # pyright: ignore
     )
 
-    sun1 = create_sun("Sun1", (250, 250, 100))
-    sun2 = create_sun("Sun2", (-250, -250, 100))
+    sun1 = create_sun("Sun1", (250, 250, 200))
+    sun2 = create_sun("Sun2", (-250, -250, 200))
+    sun3 = create_sun("Sun3", (0, 0, 150))
+    sun4 = create_sun("Sun4", (250, -250, 200))
+    sun5 = create_sun("Sun5", (-250, 250, 200))

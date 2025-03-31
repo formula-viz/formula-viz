@@ -114,7 +114,7 @@ def create_magic_material(
     return mat
 
 
-def create_asphalt_material(color=(0.05, 0.05, 0.05), name: str = "Asphalt"):
+def create_asphalt_material(color=(0.001, 0.001, 0.001), name: str = "Asphalt"):
     """Create a realistic asphalt material with improved darkness and seamless blending."""
     # Darker base color - real asphalt is nearly black
     mat = bpy.data.materials.new(name=name)

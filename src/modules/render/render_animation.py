@@ -64,7 +64,7 @@ def eevee_render(config: Config, num_frames: int, is_ui_mode: bool):
 
     # Motion Blur
     eevee.use_motion_blur = True  # type: ignore
-    eevee.motion_blur_shutter = 0.05  # type: ignore
+    eevee.motion_blur_shutter = 0.5  # type: ignore
 
     # Leaving Volumetrics Off, it seems to be for mist or fog
 
