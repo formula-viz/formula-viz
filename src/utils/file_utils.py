@@ -135,7 +135,10 @@ class FileUtils:
 
         """
         return (
-            self.CAR_PAINTS_DIR / f"{blender_obj_name.split('-')[-1]}_{hex_color}.png"
+            self.ASSETS_DIR
+            / "blender"
+            / "alternate_textures"
+            / f"{blender_obj_name.split('-')[-1]}_{hex_color}.png"
         )
 
 

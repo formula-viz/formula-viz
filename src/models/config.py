@@ -31,6 +31,7 @@ class YouTubeConfig(TypedDict):
     client_secret_path: str
     visibility: Literal["public", "private", "unlisted"]
     publish_at: Optional[str]
+    title: Optional[str]
 
 
 class SocialsConfig(TypedDict):

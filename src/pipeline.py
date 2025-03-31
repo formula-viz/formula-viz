@@ -4,7 +4,8 @@ from pathlib import Path
 from src.models.app_state import AppState
 from src.models.config import Config
 from src.modules.load_data import load_data_main
-from src.modules.render import render_main
+from src.modules.render.render_main import render_main
+from src.modules.socials_upload import socials_upload_main
 from src.modules.video_edit.video_edit_main import video_edit_main
 from src.utils.logger import log_err, log_info
 
@@ -19,21 +20,16 @@ def run_for_config(config: Config, project_root: Path):
     )
 
     app_state.load_data = load_data_main.load_data_main(config, app_state)
-
     log_info("Data loaded successfully.")
 
-    render_main.render_main(config, app_state)
+    render_main(config, app_state)
+    log_info("Rendering completed.")
+
     video_edit_main(config, app_state)
+    log_info("Video editing completed.")
 
-    # ui_mode = config.get("dev_settings", {}).get("ui_mode", False)
-
-    # if config["render"]["is_both_mode"]:
-    #     config["render"]["is_shorts_output"] = True
-    #     trigger(config)
-    #     config["render"]["is_shorts_output"] = False
-    #     trigger(config)
-    # else:
-    #     trigger(config)
+    socials_upload_main.socials_upload_main(config)
+    log_info("Socials upload completed.")
 
 
 def get_config(file: Path) -> Config:

@@ -9,6 +9,7 @@ import mathutils
 import numpy as np
 from PIL import Image
 
+from src.models.config import Config
 from src.models.driver import Driver, DriverRunData, RunDrivers
 from src.utils import file_utils
 from src.utils.colors import hex_to_blender_rgb, hex_to_normal_rgb
@@ -174,7 +175,7 @@ def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object
         if src_obj.data:
             new_obj.data = src_obj.data.copy()
 
-        new_obj.name = f"{driver_abbrev.title()}Car-{src_obj.name}"
+        new_obj.name = f"{driver_abbrev.title()}Car{src_obj.name}"
         driver_collection.objects.link(new_obj)
 
         new_obj.parent = parent_obj
@@ -217,6 +218,8 @@ def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object
     driver_collection.objects.link(new_empty)
 
     new_empty.matrix_world = base_empty_obj.matrix_world.copy()
+    scale_and_position_car(new_empty)
+    new_empty.scale = (1.3, 1.3, 1.3)
 
     for obj in base_empty_obj.children:
         copy_object_and_children(obj, new_empty)
@@ -755,8 +758,9 @@ def add_driver_particle_trail(
     return emitter
 
 
-def main_new(run_drivers: RunDrivers):
+def main(config: Config, run_drivers: RunDrivers):
     applied_colors = run_drivers.driver_applied_colors
+    focused_driver = run_drivers.focused_driver
 
     drivers_collection = bpy.data.collections.new("DriversCollection")
     bpy.context.scene.collection.children.link(drivers_collection)
@@ -764,13 +768,19 @@ def main_new(run_drivers: RunDrivers):
     count_by_team: dict[str, int] = {}
     driver_objs: dict[Driver, bpy.types.Object] = {}
 
+    base_empty_obj = create_null_base()
+
     for i, (driver, run_data) in enumerate(run_drivers.driver_run_data.items()):
         log_info(
             f"Adding {i + 1}/{len(run_drivers.drivers)} driver: {driver} in color: {applied_colors[driver]}"
         )
         start_time = time.time()
 
-        driver_obj = create_car_obj(driver.team, driver.last_name)
+        if config["type"] == "rest-of-field" and driver != focused_driver:
+            driver_obj = create_driver_from_base(driver.abbrev, base_empty_obj)
+            set_color(driver_obj, applied_colors[driver], driver.abbrev)
+        else:
+            driver_obj = create_car_obj(driver.team, driver.last_name)
         driver_objs[driver] = driver_obj
 
         # Move driver object from scene collection to drivers collection
@@ -799,17 +809,21 @@ def main_new(run_drivers: RunDrivers):
     # now, if there is any team where count is >=2, we need to add the color marker
     # to distinguish between drivers of the same team, the colors were already set previously
     # for this purpose
-    for team, count in count_by_team.items():
-        if count >= 2:
-            for i, (driver, run_data) in enumerate(run_drivers.driver_run_data.items()):
-                if driver.team == team:
-                    marker = add_color_marker_for_same_team(
-                        driver_objs[driver], run_drivers.driver_applied_colors[driver]
-                    )
-                    # Add the marker to the drivers collection
-                    if marker.name in bpy.context.scene.collection.objects:
-                        bpy.context.scene.collection.objects.unlink(marker)
-                    drivers_collection.objects.link(marker)
+    if not config["type"] == "rest-of-field":
+        for team, count in count_by_team.items():
+            if count >= 2:
+                for i, (driver, run_data) in enumerate(
+                    run_drivers.driver_run_data.items()
+                ):
+                    if driver.team == team:
+                        marker = add_color_marker_for_same_team(
+                            driver_objs[driver],
+                            run_drivers.driver_applied_colors[driver],
+                        )
+                        # Add the marker to the drivers collection
+                        if marker.name in bpy.context.scene.collection.objects:
+                            bpy.context.scene.collection.objects.unlink(marker)
+                        drivers_collection.objects.link(marker)
 
 
 # def main(

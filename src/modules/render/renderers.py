@@ -10,7 +10,6 @@ from src.modules.render import render_animation
 from src.modules.render.add_funcs import (
     add_camera,
     add_camera_plane,
-    add_car_rankings,
     add_driver_objects,
     add_formula_viz_car,
     add_status_track,
@@ -40,10 +39,26 @@ class AbstractRenderer(ABC):
         """Load driver data and set up driver objects."""
         pass
 
-    @abstractmethod
     def add_camera(self):
-        """Set up and configure the camera for the rendering."""
-        pass
+        """Configure camera to focus on the highlighted driver.
+
+        Sets up camera positioning and movement to follow the focused driver
+        (first driver in the config).
+        """
+        load_data = self.state.load_data
+        assert load_data is not None
+
+        focused_driver_run_data = load_data.run_drivers.driver_run_data[
+            load_data.run_drivers.focused_driver
+        ]
+        sped_point_df = focused_driver_run_data.sped_point_df
+
+        self.state.camera_obj = add_camera.main(
+            self.config,
+            sped_point_df,
+            self.config["render"]["start_buffer_frames"],
+            self.config["render"]["end_buffer_frames"],
+        )
 
     @abstractmethod
     def configure_widgets(self):
@@ -143,8 +158,7 @@ class HeadToHeadRenderer(AbstractRenderer):
     def add_drivers(self):
         """Load and set up driver data for head-to-head comparison."""
         assert self.state.load_data is not None
-
-        add_driver_objects.main_new(self.state.load_data.run_drivers)
+        add_driver_objects.main(self.config, self.state.load_data.run_drivers)
 
         # self.state.car_rankings = add_car_rankings.main(
         #     self.state.load_data.track_data,
@@ -158,23 +172,6 @@ class HeadToHeadRenderer(AbstractRenderer):
         # self.state.num_frames = max(
         #     len(df) for df in self.state.load_data.driver_dfs.values()
         # )
-
-    def add_camera(self):
-        """Configure camera to focus on the first driver in the config."""
-        load_data = self.state.load_data
-        assert load_data is not None
-
-        focused_driver_run_data = load_data.run_drivers.driver_run_data[
-            load_data.run_drivers.focused_driver
-        ]
-        sped_point_df = focused_driver_run_data.sped_point_df
-
-        self.state.camera_obj = add_camera.main(
-            self.config,
-            sped_point_df,
-            self.config["render"]["start_buffer_frames"],
-            self.config["render"]["end_buffer_frames"],
-        )
 
     def configure_widgets(self):
         """Set up UI elements specific to head-to-head visualization."""
@@ -215,50 +212,7 @@ class RestOfFieldRenderer(AbstractRenderer):
         and all other drivers in grayscale.
         """
         assert self.state.load_data is not None
-        if not self.state.load_data.focused_driver:
-            raise ValueError(
-                "No focused driver found,this indicates that the focused driver was not the first in the array of drivers in config."
-            )
-
-        self.state.driver_objs = add_driver_objects.main(
-            self.state.load_data.driver_dfs,
-            self.state.load_data.drivers_in_color_order,
-            self.state.load_data.driver_colors,
-            self.config["dev_settings"]["quick_textures_mode"],
-            self.state.load_data.focused_driver,
-        )
-
-        self.state.car_rankings = add_car_rankings.main(
-            self.state.load_data.track_data,
-            self.state.load_data.start_finish_line_idx,
-            self.state.load_data.driver_dfs,
-            self.config,
-            self.state.load_data.focused_driver,
-        )
-
-        # for rest of field render, some cars might be very far behind, just take len of fastest
-        self.state.num_frames = len(
-            self.state.load_data.driver_dfs[self.state.load_data.focused_driver]
-        )
-
-    def add_camera(self):
-        """Configure camera to focus on the highlighted driver.
-
-        Sets up camera positioning and movement to follow the focused driver
-        (first driver in the config).
-        """
-        assert self.state.load_data is not None
-
-        if self.state.load_data.focused_driver is None:
-            raise ValueError("Focused driver is not set.")
-
-        self.state.camera_obj = add_camera.main(
-            self.config,
-            self.state.load_data.driver_dfs[self.state.load_data.focused_driver],
-            self.state.driver_objs[self.state.load_data.focused_driver],
-            self.config["render"]["start_buffer_frames"],
-            self.config["render"]["end_buffer_frames"],
-        )
+        add_driver_objects.main(self.config, self.state.load_data.run_drivers)
 
     def configure_widgets(self):
         """Set up UI elements specific to rest-of-field visualization.

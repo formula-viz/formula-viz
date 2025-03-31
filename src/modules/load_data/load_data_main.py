@@ -88,20 +88,6 @@ def load_data_main(config: Config, app_state: AppState):
             sped_frame_to_absolute_frame,
         )
 
-        print(f"Driver: {driver}")
-        print(
-            f"  Sector 1 end sped frame: {absolute_frame_to_sped_frame[sector_1_end_absolute_frame]}, ",
-            {driver_sector_times[driver].sector1},
-        )
-        print(
-            f"  Sector 2 end sped frame: {absolute_frame_to_sped_frame[sector_2_end_absolute_frame]}, ",
-            {driver_sector_times[driver].sector2},
-        )
-        print(
-            f"  Sector 3 end sped frame: {absolute_frame_to_sped_frame[sector_3_end_absolute_frame]}, ",
-            {driver_sector_times[driver].sector3},
-        )
-
     run_drivers = RunDrivers(
         list(driver_dfs.keys()),
         focused_driver,

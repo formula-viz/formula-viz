@@ -31,7 +31,7 @@ class DriverDash:
         driver: Driver,
         sector_package: tuple[list[Timedelta], list[int], list[Timedelta]],
         color: str,
-        is_left: bool,
+        position: str,
     ):
         """Add a complete driver component package including, Driver image, Color bar, Sector times.
 
@@ -49,10 +49,15 @@ class DriverDash:
         # Adjust positions based on shorts output
         if self.config["render"]["is_shorts_output"]:
             base_y = -500
-            if is_left:
+
+            if position == "left-of-two":
                 base_x = -300
-            else:
+            elif position == "right-of-two":
                 base_x = 300
+            elif position == "center-of-one":
+                base_x = 0
+            else:
+                raise ValueError("Invalid position")
 
             image_scale = 0.5
             color_scale_x = 0.4
@@ -64,10 +69,14 @@ class DriverDash:
             sectors_x_offset = -150
         else:
             base_y = -500
-            if is_left:
+            if position == "left-of-two":
                 base_x = -1550
-            else:
+            elif position == "right-of-two":
                 base_x = 1550
+            elif position == "center-of-one":
+                base_x = 0
+            else:
+                raise ValueError("Invalid position")
 
             image_scale = 0.7
             color_scale_x = 0.16
@@ -106,7 +115,6 @@ class DriverDash:
             sector_package=sector_package,
             base_x=base_x + sectors_x_offset,
             base_y=base_y + sectors_y_offset,
-            is_left=is_left,
         )
 
     def _add_driver_sector_times(
@@ -115,7 +123,6 @@ class DriverDash:
         sector_package,
         base_x: float,
         base_y: float,
-        is_left: bool,
     ):
         """Add sector times for a specific driver with customizable positioning.
 
@@ -184,7 +191,9 @@ class DriverDash:
             end_frames_absolute: list[int] = [
                 absolute_to_sped_conversion[driver_run.sector_1_end_absolute_frame],
                 absolute_to_sped_conversion[driver_run.sector_2_end_absolute_frame],
-                absolute_to_sped_conversion[driver_run.sector_3_end_absolute_frame],
+                absolute_to_sped_conversion[driver_run.sector_3_end_absolute_frame]
+                if driver_run.sector_3_end_absolute_frame in absolute_to_sped_conversion
+                else 10000,
             ]
 
             if fastest_sector_1 is None or sector_times[0] < fastest_sector_1:
@@ -229,7 +238,28 @@ class DriverDash:
 
         sector_packages = self._process_sector_times()
 
-        if len(load_data.run_drivers.drivers) == 2:
+        if self.config["type"] == "rest-of-field":
+            driver = load_data.run_drivers.focused_driver
+            driver_color = load_data.run_drivers.driver_applied_colors[driver]
+
+            if self.config["render"]["is_shorts_output"]:
+                self._add_driver_component_package(
+                    driver,
+                    sector_packages[driver],
+                    driver_color,
+                    position="center-of-one",
+                )
+            else:
+                # NOTE, for theres only one driver so of two doesnt make sense but this does position it in the
+                # right corner which is a good spot for landscape rest of field mode
+                self._add_driver_component_package(
+                    driver,
+                    sector_packages[driver],
+                    driver_color,
+                    position="right-of-two",
+                )
+
+        elif len(load_data.run_drivers.drivers) == 2:
             driver_a = load_data.run_drivers.drivers[0]
             driver_b = load_data.run_drivers.drivers[1]
 
@@ -240,13 +270,13 @@ class DriverDash:
                 driver_a,
                 sector_packages[driver_a],
                 driver_a_color,
-                is_left=True,
+                position="left-of-two",
             )
             self._add_driver_component_package(
                 driver_b,
                 sector_packages[driver_b],
                 driver_b_color,
-                is_left=False,
+                position="right-of-two",
             )
 
     def _add_driver_image_to_vse(
