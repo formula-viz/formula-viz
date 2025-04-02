@@ -46,6 +46,9 @@ class FileUtils:
         self.FORMULA_VIZ_ICON_TRANSPARENT_PATH = (
             self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-transparent.png"
         )
+        self.FORMULA_VIZ_CIRCLE_ICON_PATH = (
+            self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled.png"
+        )
 
         self.MAIN_FONT = self.FONTS_DIR / "Formula1-Regular.ttf"
         self.BOLD_FONT = self.FONTS_DIR / "Formula1-Bold.ttf"
@@ -94,7 +97,7 @@ class FileUtils:
         return (
             self.IMAGES_DIR
             / "driver-headshots"
-            / f"{driver.abbrev}-{driver.last_name}.png"
+            / f"{driver.abbrev}-{driver.team}-{driver.year}.png"
         )
 
     def get_track_file(self, year: str, track: str) -> str:

@@ -10,8 +10,8 @@ from pandas import DataFrame, Series
 
 from src.models.config import Config
 
-MIN_CAM_DISTANCE = 70
-MAX_CAM_DISTANCE = 70
+MIN_CAM_DISTANCE = 90
+MAX_CAM_DISTANCE = 90
 
 
 def scale_frames(df_for_cam: DataFrame):

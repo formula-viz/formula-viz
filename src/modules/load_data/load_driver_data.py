@@ -19,7 +19,7 @@ The processed data can be used to create 3D visualizations of qualifying laps.
 import math
 import os
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, Union
 
 import fastf1 as ff1
 import mathutils
@@ -75,7 +75,9 @@ def load_driver_headshots(drivers: list[Driver]) -> None:
         log_info(f"Downloaded {downloaded_count} driver headshots")
 
 
-def process_tel(q: Laps, driver: Driver) -> tuple[Telemetry, SectorTimes]:
+def process_tel(
+    q: Laps, driver: Driver
+) -> Union[Exception, tuple[Telemetry, SectorTimes]]:
     """Process telemetry data for a given driver.
 
     Args:
@@ -89,7 +91,7 @@ def process_tel(q: Laps, driver: Driver) -> tuple[Telemetry, SectorTimes]:
     try:
         fastest = q.pick_not_deleted().pick_fastest()
         if fastest is None:
-            raise ValueError(f"Couldn't find fastest lap for {driver}")
+            return ValueError(f"Couldn't find fastest lap for {driver}")
 
         sector_times = SectorTimes(
             fastest["Sector1Time"], fastest["Sector2Time"], fastest["Sector3Time"]
@@ -97,7 +99,7 @@ def process_tel(q: Laps, driver: Driver) -> tuple[Telemetry, SectorTimes]:
 
         tel: Telemetry = fastest.get_telemetry(frequency="original")
     except Exception as e:
-        raise ValueError(f"Couldn't get proper telemetry for {driver}: {e}")
+        return ValueError(f"Couldn't get proper telemetry for {driver}: {e}")
 
     tel = tel[tel["Source"].isin(["pos", "interpolation"])]  # pyright: ignore
     tel.reset_index(drop=True)
@@ -167,19 +169,40 @@ def process_driver_session_results(
         q1, q2, q3 = laps.split_qualifying_sessions()
         # we want to get the fastest lap for the highest qualifying session which the driver reached
         if q3 is not None:
-            tel, sector_times = process_tel(q3, driver)
+            tel_sec = process_tel(q3, driver)
+            if isinstance(tel_sec, Exception):
+                log_warn(
+                    f"Failed to process telemetry data for driver {driver}: {tel_sec}"
+                )
+                continue
+            tel, sector_times = tel_sec
+
             if tel is not None:
                 driver_tels[driver] = tel
                 driver_sector_times[driver] = sector_times
 
         elif q2 is not None:
-            tel, sector_times = process_tel(q2, driver)
+            tel_sec = process_tel(q2, driver)
+            if isinstance(tel_sec, Exception):
+                log_warn(
+                    f"Failed to process telemetry data for driver {driver}: {tel_sec}"
+                )
+                continue
+            tel, sector_times = tel_sec
+
             if tel is not None:
                 driver_tels[driver] = tel
                 driver_sector_times[driver] = sector_times
 
         elif q1 is not None:
-            tel, sector_times = process_tel(q1, driver)
+            tel_sec = process_tel(q1, driver)
+            if isinstance(tel_sec, Exception):
+                log_warn(
+                    f"Failed to process telemetry data for driver {driver}: {tel_sec}"
+                )
+                continue
+            tel, sector_times = tel_sec
+
             if tel is not None:
                 driver_tels[driver] = tel
                 driver_sector_times[driver] = sector_times
@@ -349,6 +372,7 @@ def get_driver_df(
         tel: Raw telemetry data
         s_divisor: Smoothness divisor for the spline (higher = less smooth)
         frames_per_second: Target frame rate for the output data
+        track_data: Track data containing inner and outer points
 
     Returns:
         DataFrame with X, Y, Z, and Speed columns at specified frame rate
@@ -522,33 +546,30 @@ def get_driver_df(
     )
 
     # Brake (boolean values)
-    brake_values = brake[brake.notna()].values
+    brake_values = brake[brake.notna()].to_numpy()
     brake_interp = interp1d(
         std_time_floats,
         brake_values,
         kind="nearest",
         bounds_error=False,
-        fill_value=(brake_values[0], brake_values[-1]),
     )
 
     # Gear (integer values)
-    gear_values = gear[gear.notna()].values
+    gear_values = gear[gear.notna()].to_numpy()
     gear_interp = interp1d(
         std_time_floats,
         gear_values,
         kind="nearest",
         bounds_error=False,
-        fill_value=(gear_values[0], gear_values[-1]),
     )
 
     # DRS (boolean values)
-    drs_values = drs[drs.notna()].values
+    drs_values = drs[drs.notna()].to_numpy()
     drs_interp = interp1d(
         std_time_floats,
         drs_values,
         kind="nearest",
         bounds_error=False,
-        fill_value=(drs_values[0], drs_values[-1]),
     )
 
     # Sample at the times corresponding to final_x
@@ -862,33 +883,6 @@ def in_track_limits(driver_df: pd.DataFrame, track_edges: pd.DataFrame):
     return True
 
 
-def optimize_smoothness(
-    track_edges: pd.DataFrame, fps: int, driver_tels: dict[str, Telemetry]
-):
-    dfs: dict[str, pd.DataFrame] = {}
-
-    s_divisor = 3  # increasing this s_divisor will make the spline more rigid
-    max_s_divisor = 10
-
-    found_max_smoothness = False
-    while not found_max_smoothness:
-        if s_divisor > max_s_divisor:
-            log_info("Using max smoothness, this means something is probably wrong...")
-            for driver, tel in driver_tels.items():
-                dfs[driver] = get_driver_df(tel, s_divisor, fps)
-
-        for driver, tel in driver_tels.items():
-            dfs[driver] = get_driver_df(tel, s_divisor, fps)
-
-            if not in_track_limits(dfs[driver], track_edges):
-                s_divisor += 1
-                break
-
-        found_max_smoothness = True
-
-    return dfs
-
-
 def _get_sectors_info(
     driver_dfs: dict[Driver, DataFrame],
     driver_sector_times: dict[Driver, SectorTimes],
@@ -1009,14 +1003,45 @@ def _get_sectors_info(
 
 
 def get_drivers_included_in_run(
-    drivers_from_tels: list[str], config: Config
-) -> set[str]:
+    drivers_from_tels: list[tuple[str, str, str, int]], config: Config
+) -> set[tuple[str, str, str, int]]:
+    """Return a set of drivers included in the run based on the configuration.
+
+    Args:
+        drivers_from_tels: List of drivers from telemetry data.
+        config: Configuration object.
+
+    Returns:
+        Set of drivers included in the run.
+
+    """
     if config["type"] == "rest-of-field":
         return set(drivers_from_tels)
     elif not config["mixed_mode"]["enabled"]:
-        return set(config["drivers"])
+        drivers_from_config = config["drivers"]
+        full_drivers_info: list[tuple[str, str, str, int]] = []
+        for driver_last_name in drivers_from_config:
+            for driver_from_tel in drivers_from_tels:
+                if driver_last_name == driver_from_tel[0]:
+                    full_drivers_info.append(driver_from_tel)
+        return set(full_drivers_info)
     else:
-        return set(config["mixed_mode"]["drivers"].keys())
+        drivers_from_config = config["mixed_mode"]["drivers"]
+        full_drivers_info: list[tuple[str, str, str, int]] = []
+        for driver_last_name, sub_dict in drivers_from_config.items():
+            year = sub_dict["year"]
+            session = sub_dict["session"]
+
+            for driver_from_tel in drivers_from_tels:
+                if (
+                    driver_last_name == driver_from_tel[0]
+                    and year == driver_from_tel[3]
+                    and session == driver_from_tel[2]
+                ):
+                    full_drivers_info.append(driver_from_tel)
+            pass
+
+        return set(full_drivers_info)
 
 
 # in order to run this function, we need to already have the track data for this track and year
@@ -1039,19 +1064,35 @@ def main(
     )
 
     drivers_included_in_run = get_drivers_included_in_run(
-        list([driver.last_name for driver in driver_tels.keys()]), config
+        list(
+            [
+                (driver.last_name, driver.team, driver.session, driver.year)
+                for driver in driver_tels.keys()
+            ]
+        ),
+        config,
     )
 
     driver_dfs: dict[Driver, pd.DataFrame] = {}
     for driver, tel in driver_tels.items():
-        if driver.last_name in drivers_included_in_run:
-            driver_df = get_driver_df(tel, 3, config["render"]["fps"], track_data)
-            driver_df = add_start_buffer(
-                driver_df, config["render"]["start_buffer_frames"]
-            )
-            driver_df = add_end_buffer(driver_df, config["render"]["end_buffer_frames"])
+        for full_driver_info in drivers_included_in_run:
+            if (
+                driver.last_name == full_driver_info[0]
+                and driver.team == full_driver_info[1]
+                and driver.session == full_driver_info[2]
+                and driver.year == full_driver_info[3]
+            ):
+                full_driver_info = full_driver_info
 
-            driver_dfs[driver] = driver_df
+                driver_df = get_driver_df(tel, 3, config["render"]["fps"], track_data)
+                driver_df = add_start_buffer(
+                    driver_df, config["render"]["start_buffer_frames"]
+                )
+                driver_df = add_end_buffer(
+                    driver_df, config["render"]["end_buffer_frames"]
+                )
+
+                driver_dfs[driver] = driver_df
 
     for driver, driver_df in driver_dfs.items():
         driver_df = add_car_rots(driver_df)

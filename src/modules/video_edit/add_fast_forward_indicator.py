@@ -23,7 +23,8 @@ def add_fast_forward_indicator(run_drivers: RunDrivers, cur_channel):
     sped_frame_to_absolute_frame = focused_driver_run_data.sped_frame_to_absolute_frame
 
     # Create a sequence in the Video Sequence Editor for fast forward indicator
-    ff_image_path = str(file_utils.project_paths.IMAGES_DIR / "ff-gray.png")
+    # ff_image_path = str(file_utils.project_paths.IMAGES_DIR / "ff-gray.png")
+    ff_image_path = str(file_utils.project_paths.IMAGES_DIR / "ff-white-from-svg.png")
 
     # Get the sequence editor
     if not bpy.context.scene.sequence_editor:
@@ -40,8 +41,8 @@ def add_fast_forward_indicator(run_drivers: RunDrivers, cur_channel):
 
     ff_strip.transform.offset_x = 0
     ff_strip.transform.offset_y = 492
-    ff_strip.transform.scale_x = 0.05
-    ff_strip.transform.scale_y = 0.05
+    ff_strip.transform.scale_x = 0.25
+    ff_strip.transform.scale_y = 0.25
 
     # Set initial properties for the strip
     ff_strip.blend_type = "ALPHA_OVER"

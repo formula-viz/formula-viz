@@ -16,8 +16,8 @@ def _find_initial_straights(
     start_buffer = config["render"]["start_buffer_frames"] * 2
     end_buffer = config["render"]["end_buffer_frames"]
 
-    x_values = focused_driver_df["X"].values
-    y_values = focused_driver_df["Y"].values
+    x_values = focused_driver_df["X"].to_numpy()
+    y_values = focused_driver_df["Y"].to_numpy()
 
     is_on_straight: list[tuple[int, bool]] = []
     # Process each frame within valid range

@@ -28,8 +28,10 @@ def run_for_config(config: Config, project_root: Path):
     video_edit_main(config, app_state)
     log_info("Video editing completed.")
 
-    socials_upload_main.socials_upload_main(config)
-    log_info("Socials upload completed.")
+    if not config["dev_settings"]["ui_mode"]:
+        log_info("UI mode is disabled.")
+        socials_upload_main.socials_upload_main(config)
+        log_info("Socials upload completed.")
 
 
 def get_config(file: Path) -> Config:
@@ -48,7 +50,13 @@ def run_single_mode(project_root: Path):
         get_config(config_file) if config_file.exists() else get_config(template_file)
     )
 
-    run_for_config(config, project_root)
+    if config["render"]["is_both_mode"]:
+        config["render"]["is_shorts_output"] = True
+        run_for_config(config, project_root)
+        config["render"]["is_shorts_output"] = False
+        run_for_config(config, project_root)
+    else:
+        run_for_config(config, project_root)
 
 
 def run_batch_mode(project_root: Path):

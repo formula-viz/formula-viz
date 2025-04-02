@@ -6,8 +6,8 @@ from typing import Optional
 import bmesh
 import bpy
 
-from src.models.app_state import AppState
 from src.models.sectors import SectorsInfo
+from src.models.track_data import TrackData
 from src.utils.materials import (
     create_asphalt_material,
 )
@@ -514,11 +514,12 @@ def create_planes(
     return obj
 
 
-def main(state: AppState) -> None:
+def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
     """Create the complete track with main surfaces and curbs.
 
     Args:
-        state: The application state containing track data.
+        track_data: The track data containing track information.
+        sectors_info: Optional information about sectors.
 
     """
     track_collection = bpy.data.collections.new(name="TrackCollection")
@@ -543,8 +544,6 @@ def main(state: AppState) -> None:
     curbstone_b_mat = create_asphalt_material(red_color, "CurbstoneB")
     line_mat = create_asphalt_material((0.5, 0.5, 0.5), "Line")
 
-    assert state.load_data is not None
-
     # # Load the asphalt material from external blend file
     # file_path = f"{RESOURCES_DIR}/asphalt_track_4k.blend/asphalt_track_4k.blend"
     # with bpy.data.libraries.load(file_path) as (data_from, data_to):
@@ -557,45 +556,42 @@ def main(state: AppState) -> None:
 
     track_mat = create_asphalt_material()
     create_planes_new(
-        state.load_data.track_data.inner_points,
-        state.load_data.track_data.outer_points,
+        track_data.inner_points,
+        track_data.outer_points,
         "Main",
         track_mat,
     )
 
     create_planes_curb(
-        state.load_data.track_data.outer_points,
-        state.load_data.track_data.outer_curb_points,
+        track_data.outer_points,
+        track_data.outer_curb_points,
         "CurbOuter",
         curb_mat,
         curbstone_a_mat,
         curbstone_b_mat,
     )
     create_planes_curb(
-        state.load_data.track_data.inner_points,
-        state.load_data.track_data.inner_curb_points,
+        track_data.inner_points,
+        track_data.inner_curb_points,
         "CurbInner",
         curb_mat,
         curbstone_a_mat,
         curbstone_b_mat,
     )
 
-    if (
-        state.load_data.track_data.inner_trace_line
-        and state.load_data.track_data.outer_trace_line
-    ):
+    if track_data.inner_trace_line and track_data.outer_trace_line and sectors_info:
         create_boxes(
-            state.load_data.track_data.inner_trace_line.a_points,
-            state.load_data.track_data.inner_trace_line.b_points,
-            state.load_data.sectors_info,
+            track_data.inner_trace_line.a_points,
+            track_data.inner_trace_line.b_points,
+            sectors_info,
             "InnerLine",
             0.005,
             line_mat,
         )
         create_boxes(
-            state.load_data.track_data.outer_trace_line.a_points,
-            state.load_data.track_data.outer_trace_line.b_points,
-            state.load_data.sectors_info,
+            track_data.outer_trace_line.a_points,
+            track_data.outer_trace_line.b_points,
+            sectors_info,
             "OuterLine",
             0.005,
             line_mat,

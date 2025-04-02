@@ -13,6 +13,7 @@ from src.modules.video_edit import (
     add_fast_forward_indicator,
     add_timer,
 )
+from src.modules.video_edit.thumbnails import process_thumbnails
 from src.utils import file_utils
 from src.utils.logger import log_info
 
@@ -37,6 +38,15 @@ def edit_video(config: Config, app_state: AppState):
             break
 
     log_info("Successfully switched to Blender video edit mode")
+
+    log_info("Processing thumbnails first...")
+    process_thumbnails.process_thumbnails(config, app_state)
+    if bpy.context.scene.sequence_editor:
+        for sequence in bpy.context.scene.sequence_editor.sequences_all:
+            bpy.context.scene.sequence_editor.sequences.remove(sequence)
+    else:
+        bpy.context.scene.sequence_editor_create()
+    log_info("Done processing thumbnails")
 
     # Set frames per second based on config
     bpy.context.scene.render.fps = config["render"]["fps"]

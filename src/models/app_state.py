@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from src.models.driver import Driver
 from src.models.load_data import LoadData
+from src.models.track_data import TrackData
 
 
 @dataclass
@@ -13,6 +14,7 @@ class AppState:
     project_root: Path
 
     load_data: Optional[LoadData] = None
+    thumbnail_track_data: Optional[TrackData] = None
 
     driver_objs: dict[Driver, Any] = field(default_factory=dict)
     num_frames: int = 0

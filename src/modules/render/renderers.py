@@ -13,13 +13,17 @@ from src.modules.render.add_funcs import (
     add_driver_objects,
     add_formula_viz_car,
     add_light,
+    add_sky_texture,
+    add_snow_background,
     add_status_track,
     add_track,
     add_track_idx_line,
 )
 
 # from src.modules.render.thumbnail.create_thumbnail import ThumbnailGenerator
+from src.modules.render.thumbnails import gen_thumbnails
 from src.utils.colors import (
+    SECTOR_1_COLOR,
     SECTOR_2_COLOR,
     SECTOR_3_COLOR,
 )
@@ -67,15 +71,10 @@ class AbstractRenderer(ABC):
 
     def setup_world(self):
         """Initialize the 3D world with track and lighting."""
-        # Clear all collections
         for collection in bpy.data.collections:
             bpy.data.collections.remove(collection, do_unlink=True)  # type: ignore
-
-        # Clear all objects
         for obj in bpy.data.objects:
             bpy.data.objects.remove(obj, do_unlink=True)  # type: ignore
-
-        # Clear all materials
         for material in bpy.data.materials:
             bpy.data.materials.remove(material, do_unlink=True)  # type: ignore
 
@@ -83,6 +82,8 @@ class AbstractRenderer(ABC):
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[  # pyright: ignore
             0
         ].default_value = (0.045, 0.046, 0.051, 1)  # pyright: ignore
+        add_snow_background.add_snow_background()
+        add_sky_texture.add_sky_texture()
 
     def trigger_render(self):
         """Start the rendering process.
@@ -104,13 +105,21 @@ class AbstractRenderer(ABC):
         load_data = self.state.load_data
         assert load_data is not None
 
-        add_track.main(self.state)
+        add_track.main(load_data.track_data, load_data.sectors_info)
 
-        add_track_idx_line.main(
+        # add_track_idx_line.main(
+        #     load_data.track_data.inner_curb_points,
+        #     load_data.track_data.outer_curb_points,
+        #     load_data.start_finish_line_idx,
+        #     "StartFinishLine",
+        # )
+        add_track_idx_line.add_track_idx_line(
             load_data.track_data.inner_curb_points,
             load_data.track_data.outer_curb_points,
             load_data.start_finish_line_idx,
-            "StartFinishLine",
+            "Sector3LineEnd",
+            3,
+            SECTOR_1_COLOR,
         )
         add_track_idx_line.add_track_idx_line(
             load_data.track_data.inner_points,
@@ -137,6 +146,13 @@ class AbstractRenderer(ABC):
         """
         self.setup_world()
         # add_background_grid.main()
+
+        gen_thumbnails.gen_thumbnails(self.config, self.state)
+        if self.config["dev_settings"]["thumbnail_mode"]:
+            return
+
+        self.setup_world()
+
         self.add_drivers()
         self.add_track()
         self.add_camera()
@@ -177,16 +193,6 @@ class HeadToHeadRenderer(AbstractRenderer):
         """Set up UI elements specific to head-to-head visualization."""
         assert self.state.load_data is not None
 
-        if self.state.load_data.focused_driver is None:
-            raise ValueError("Focused driver is not set.")
-
-        if not self.state.load_data.track_data:
-            raise ValueError("Track data is not set.")
-
-        add_status_track.StatusTrack(
-            self.state,
-            self.config,
-        )
         # add_live_leaderboard_new.LiveLeaderboard(
         #     self.config,
         #     list(zip(self.state.drivers_in_order, self.state.driver_colors)),
@@ -220,14 +226,6 @@ class RestOfFieldRenderer(AbstractRenderer):
         Creates and configures widgets like the status track, leaderboard,
         race timer, driver indicator circle, and outro sequence.
         """
-        assert self.state.load_data is not None
-
-        if self.state.load_data.focused_driver is None:
-            raise ValueError("Focused driver is not set.")
-
-        if not self.state.load_data.track_data:
-            raise ValueError("Track data is not set.")
-
         add_status_track.StatusTrack(
             self.state,
             self.config,

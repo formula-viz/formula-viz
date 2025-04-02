@@ -1,5 +1,3 @@
-from pandas import DataFrame
-
 from src.models.app_state import AppState
 from src.models.config import Config
 from src.models.driver import Driver, DriverRunData, RunDrivers
@@ -18,6 +16,11 @@ def load_data_main(config: Config, app_state: AppState):
     log_info(f"Loading data for {config['type']} race")
 
     track_data = load_track_data.main(config)
+    config_copy = config.copy()
+    config_copy["track"] = "JAPAN"
+    config_copy["year"] = 2024
+    thumbnail_track_data = load_track_data.main(config_copy)
+    app_state.thumbnail_track_data = thumbnail_track_data
 
     (
         driver_dfs,
@@ -59,16 +62,16 @@ def load_data_main(config: Config, app_state: AppState):
 
     driver_sped_point_dfs = {}
     for driver, driver_point_df in driver_point_dfs.items():
-        # Create a new empty DataFrame with the same columns
-        sped_points_df = DataFrame(columns=driver_point_df.columns)
+        # Create a list of indices to keep (frames that shouldn't be skipped)
+        rows_to_keep = [
+            i
+            for i in range(len(driver_point_df))
+            if not should_skip_point.get(i, False)
+        ]
 
-        # Iterate through rows and add only those where FastForward is not True
-        for idx, row in driver_point_df.iterrows():
-            if not row.get(
-                "FastForward", False
-            ):  # Default to False if column doesn't exist
-                sped_points_df.loc[len(sped_points_df)] = row
-        driver_sped_point_dfs[driver] = sped_points_df
+        driver_sped_point_dfs[driver] = driver_point_df.iloc[rows_to_keep].reset_index(
+            drop=True
+        )
 
     driver_run_data: dict[Driver, DriverRunData] = {}
     for driver, driver_point_df in driver_point_dfs.items():
