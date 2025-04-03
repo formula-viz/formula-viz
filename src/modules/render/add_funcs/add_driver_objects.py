@@ -16,7 +16,7 @@ from src.utils.colors import hex_to_blender_rgb, hex_to_normal_rgb
 from src.utils.logger import log_info
 
 
-def scale_and_position_car(empty_obj: bpy.types.Object):
+def scale_and_position_car(empty_obj: bpy.types.Object) -> tuple[float, float, float]:
     # Calculate the bounds of all objects together
     min_x = min_y = min_z = float("inf")
     max_x = max_y = max_z = float("-inf")
@@ -56,6 +56,8 @@ def scale_and_position_car(empty_obj: bpy.types.Object):
             (cur_loc[2] - center_z) * scale_factor,
         )
 
+    return (center_x, center_y, center_z)
+
 
 def create_car_obj(team_id: str, driver_last_name: str):
     """Create a base F1 car object that will be used as a template for this team."""
@@ -94,7 +96,7 @@ def create_car_obj(team_id: str, driver_last_name: str):
                             if node.type == "BSDF_PRINCIPLED":
                                 node.inputs["Metallic"].default_value = 0.5
 
-    scale_and_position_car(empty_obj)
+    position_offset = scale_and_position_car(empty_obj)
     if team_id == "Williams":
         for child in empty_obj.children:
             child.location = (
@@ -103,7 +105,7 @@ def create_car_obj(team_id: str, driver_last_name: str):
                 child.location[2] - 0.13,
             )
 
-    return empty_obj
+    return empty_obj, position_offset
 
 
 def create_team_base(team_id: str):
@@ -285,7 +287,6 @@ def add_driver_trail(
 ):
     """Create a trailing effect behind a driver object using an animated curve."""
 
-    # Setup helpers
     def define_color_constants():
         """Define the color constants used for the trail."""
         red_rgb = (0.5, 0.0, 0.0)
@@ -353,8 +354,7 @@ def add_driver_trail(
         spline_b,
         x_values,
         y_values,
-        z_value_a,
-        z_value_b,
+        z_values,
         sped_to_absolute,
         effective_length,
         stride,
@@ -366,10 +366,14 @@ def add_driver_trail(
         cur_vec = (
             x_values[current_absolute_frame + 1] - x_values[current_absolute_frame],
             y_values[current_absolute_frame + 1] - y_values[current_absolute_frame],
-            0,
+            z_values[current_absolute_frame + 1] - z_values[current_absolute_frame],
         )
-        vec_length = (cur_vec[0] ** 2 + cur_vec[1] ** 2) ** 0.5
-        cur_vec_normalized = (cur_vec[0] / vec_length, cur_vec[1] / vec_length, 0)
+        vec_length = (cur_vec[0] ** 2 + cur_vec[1] ** 2 + cur_vec[2] ** 2) ** 0.5
+        cur_vec_normalized = (
+            cur_vec[0] / vec_length,
+            cur_vec[1] / vec_length,
+            cur_vec[2] / vec_length,
+        )
 
         # Update all trail points
         for i in range(effective_length):
@@ -377,15 +381,17 @@ def add_driver_trail(
             if i == 0:
                 x = x_values[vals_idx] + cur_vec_normalized[0] * 2
                 y = y_values[vals_idx] + cur_vec_normalized[1] * 2
+                z = z_values[vals_idx] + cur_vec_normalized[2] * 2
             else:
                 x = x_values[vals_idx]
                 y = y_values[vals_idx]
+                z = z_values[vals_idx]
 
             # Update spline points
-            spline_a.points[i].co = (x, y, z_value_a, 1)
+            spline_a.points[i].co = (x, y, z, 1)
             spline_a.points[i].keyframe_insert(data_path="co", frame=sped_frame + 1)
 
-            spline_b.points[i].co = (x, y, z_value_b, 1)
+            spline_b.points[i].co = (x, y, z, 1)
             spline_b.points[i].keyframe_insert(data_path="co", frame=sped_frame + 1)
 
     # Main function logic starts here
@@ -405,6 +411,7 @@ def add_driver_trail(
     # Get data from the dataframe
     x_values = sped_point_df["X"].values
     y_values = sped_point_df["Y"].values
+    z_values = sped_point_df["Z"].values
     throttle_values = (
         sped_point_df["Throttle"].values
         if "Throttle" in sped_point_df.columns
@@ -416,9 +423,6 @@ def add_driver_trail(
         else np.zeros(len(sped_point_df))
     )
     total_frames = len(sped_point_df)
-
-    z_value_a = 0.1
-    z_value_b = -0.5
 
     # Define colors
     red_rgb, yellow_rgb, green_rgb = define_color_constants()
@@ -432,8 +436,8 @@ def add_driver_trail(
 
     # Initialize all spline points to first position
     for i in range(effective_length):
-        spline_a.points[i].co = (x_values[0], y_values[0], z_value_a, 1)
-        spline_b.points[i].co = (x_values[0], y_values[0], z_value_b, 1)
+        spline_a.points[i].co = (x_values[0], y_values[0], z_values[0], 1)
+        spline_b.points[i].co = (x_values[0], y_values[0], z_values[0], 1)
 
     # Animation phase 1: Growing trail
     growing_phase_end = min(effective_length * stride, total_frames)
@@ -448,8 +452,7 @@ def add_driver_trail(
             spline_b,
             x_values,
             y_values,
-            z_value_a,
-            z_value_b,
+            z_values,
             sped_to_absolute,
             effective_length,
             stride,
@@ -753,6 +756,89 @@ def add_driver_particle_trail(
     return emitter
 
 
+def add_driver_trail_new(
+    driver: Driver,
+    driver_obj: bpy.types.Object,
+    position_offset: tuple[float, float, float],
+    length_of_trail: int,
+    run_data: DriverRunData,
+    driver_color: str,
+):
+    sped_point_df = run_data.sped_point_df
+
+    curve_data = bpy.data.curves.new(f"{driver.abbrev}Trail", type="CURVE")
+    curve_data.dimensions = "3D"
+    curve_data.resolution_u = 12
+    curve_data.bevel_depth = 0.15
+    curve_data.bevel_resolution = 3
+    curve_data.fill_mode = "FULL"
+
+    trail_obj = bpy.data.objects.new(f"{driver.abbrev}Trail", curve_data)
+    bpy.context.scene.collection.objects.link(trail_obj)
+
+    spline = curve_data.splines.new("NURBS")
+    spline.points.add(length_of_trail - 1)  # -1 because NURBS starts with 1 point
+
+    x_values = sped_point_df["X"].values
+    y_values = sped_point_df["Y"].values
+    z_values = sped_point_df["Z"].values
+
+    is_brake = sped_point_df["Brake"].values
+
+    # Create material for the trail
+    trail_mat = bpy.data.materials.new(name=f"{driver.abbrev}TrailMaterial")
+    trail_mat.use_nodes = True
+    nodes = trail_mat.node_tree.nodes
+    links = trail_mat.node_tree.links
+    nodes.clear()
+
+    # Create emission shader
+    output = nodes.new(type="ShaderNodeOutputMaterial")
+    emission = nodes.new(type="ShaderNodeEmission")
+    links.new(emission.outputs[0], output.inputs[0])
+    emission.inputs["Strength"].default_value = 3.0
+
+    # Apply material to the trail
+    trail_obj.data.materials.append(trail_mat)
+
+    for i in range(length_of_trail):
+        spline.points[i].co = (
+            x_values[0] + position_offset[0] * 2,
+            y_values[0] + position_offset[1] * 2,
+            z_values[0] + 0.3,
+            1,
+        )
+
+    for frame in range(len(sped_point_df)):
+        # Set the current frame for animation
+        bpy.context.scene.frame_set(frame)
+
+        # Set color based on braking
+        if not is_brake[frame]:
+            # Green if accelerating
+            emission.inputs["Color"].default_value = (0.0, 1.0, 0.0, 1.0)
+        else:
+            # Red if braking
+            emission.inputs["Color"].default_value = (1.0, 0.0, 0.0, 1.0)
+        emission.inputs["Color"].keyframe_insert(data_path="default_value", frame=frame)
+
+        # Update each point in the trail
+        for j in range(length_of_trail):
+            idx = frame - j
+            idx = max(idx, 0)
+
+            # Set the position for this point
+            spline.points[j].co = (
+                x_values[idx] + position_offset[0] * 2,
+                y_values[idx] + position_offset[1] * 2,
+                z_values[idx] + 0.3,
+                1,
+            )
+
+            # Insert a keyframe for this point at the current frame
+            spline.points[j].keyframe_insert(data_path="co", frame=frame)
+
+
 def main(config: Config, run_drivers: RunDrivers):
     applied_colors = run_drivers.driver_applied_colors
     focused_driver = run_drivers.focused_driver
@@ -771,11 +857,12 @@ def main(config: Config, run_drivers: RunDrivers):
         )
         start_time = time.time()
 
+        position_offset = None
         if config["type"] == "rest-of-field" and driver != focused_driver:
             driver_obj = create_driver_from_base(driver.abbrev, base_empty_obj)
             set_color(driver_obj, applied_colors[driver], driver.abbrev)
         else:
-            driver_obj = create_car_obj(driver.team, driver.last_name)
+            driver_obj, position_offset = create_car_obj(driver.team, driver.last_name)
         driver_objs[driver] = driver_obj
 
         # Move driver object from scene collection to drivers collection
@@ -790,12 +877,20 @@ def main(config: Config, run_drivers: RunDrivers):
             drivers_collection.objects.link(child)
 
         add_driver_keyframes(driver_obj, run_data.sped_point_df)
-        # add_driver_trail(
-        #     driver, driver_obj, run_data, run_drivers.driver_applied_colors[driver]
-        # )
-        # add_driver_particle_trail(
-        #     driver, driver_obj, run_drivers.driver_applied_colors[driver]
-        # )
+        if position_offset is not None:
+            if config["dev_settings"]["quick_textures_mode"]:
+                length_of_trail = 10
+            else:
+                length_of_trail = 50
+
+            add_driver_trail_new(
+                driver,
+                driver_obj,
+                position_offset,
+                length_of_trail,
+                run_data,
+                run_drivers.driver_applied_colors[driver],
+            )
 
         elapsed_time = time.time() - start_time
         count_by_team[driver.team] = count_by_team.get(driver.team, 0) + 1
@@ -819,74 +914,3 @@ def main(config: Config, run_drivers: RunDrivers):
                         if marker.name in bpy.context.scene.collection.objects:
                             bpy.context.scene.collection.objects.unlink(marker)
                         drivers_collection.objects.link(marker)
-
-
-# def main(
-#     driver_dfs: dict[Driver, pd.DataFrame],
-#     drivers: list[Driver],
-#     driver_colors: list[str],
-#     quick_textures_mode: bool,
-#     rest_of_field_focused_driver: Optional[Driver],
-# ) -> dict[Driver, bpy.types.Object]:
-#     """Process all drivers and return a dictionary mapping driver abbreviations to their objects."""
-#     quick_textures_mode_max = 2
-
-#     # base_empty_objs_by_team: dict[str, bpy.types.Object] = {}
-#     count_by_team: dict[str, int] = {}
-
-#     # Create a collection for all driver objects
-#     drivers_collection = bpy.data.collections.new("DriversCollection")
-#     bpy.context.scene.collection.children.link(drivers_collection)
-
-#     driver_objs: dict[Driver, bpy.types.Object] = {}
-#     for i, (driver, color) in enumerate(zip(drivers, driver_colors)):
-#         if quick_textures_mode and i >= quick_textures_mode_max:
-#             continue
-
-#         log_info(f"Adding {i + 1}/{len(drivers)} driver: {driver} in color: {color}")
-#         start_time = time.time()
-
-#         # if rest_of_field_focused_driver and driver != rest_of_field_focused_driver:
-#         #     if "null" not in base_empty_objs_by_team:
-#         #         base_empty_objs_by_team["null"] = create_null_base()
-#         #     base_empty_obj = base_empty_objs_by_team["null"]
-#         #     driver_obj = create_car_obj(driver.team, driver.last_name)
-#         # elif driver.team in base_empty_objs_by_team:
-#         #     base_empty_obj = base_empty_objs_by_team[driver.team]
-#         #     driver_obj = create_car_obj(driver.team, driver.last_name)
-#         # else:
-#         #     base_empty_obj = create_team_base(driver.team)
-#         #     base_empty_objs_by_team[driver.team] = base_empty_obj
-#         #     driver_obj = create_car_obj(driver.team, driver.last_name)
-
-#         driver_obj = create_car_obj(driver.team, driver.last_name)
-
-#         # Move driver object from scene collection to drivers collection
-#         if driver_obj.name in bpy.context.scene.collection.objects:
-#             bpy.context.scene.collection.objects.unlink(driver_obj)
-#         drivers_collection.objects.link(driver_obj)
-
-#         # Also add all children to the collection
-#         for child in driver_obj.children_recursive:
-#             if child.name in bpy.context.scene.collection.objects:
-#                 bpy.context.scene.collection.objects.unlink(child)
-#             drivers_collection.objects.link(child)
-
-#         if not quick_textures_mode:
-#             set_color(driver_obj, color, driver.abbrev)
-#         add_driver_keyframes(driver_obj, driver_dfs[driver])
-#         # add_particle_trail(driver_obj, color)
-#         # add_driver_trail_test(driver_obj, driver_dfs[driver], driver, color)
-#         # add_driver_trail(driver, driver_obj, dr, color)
-#         add_driver_trail_sped(
-#             driver,
-#             driver_obj,
-#         )
-
-#         driver_objs[driver] = driver_obj
-#         count_by_team[driver.team] = count_by_team.get(driver.team, 0) + 1
-
-#         elapsed_time = time.time() - start_time
-#         log_info(f"Driver {driver} added in {elapsed_time:.2f} seconds")
-
-#     return driver_objs

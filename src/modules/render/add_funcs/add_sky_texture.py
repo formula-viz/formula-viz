@@ -10,58 +10,103 @@ def add_sky_texture():
     for node in nodes:
         nodes.remove(node)
 
-    # Create sky texture node
-    sky_texture = nodes.new(type="ShaderNodeTexSky")
+    def configure_sky_texture():
+        sky_texture = nodes.new(type="ShaderNodeTexSky")
+        sky_texture.sky_type = "NISHITA"
+        sky_texture.sun_disc = False
+        sky_texture.sun_elevation = 1.0
+        sky_texture.sun_rotation = 0.0
+        sky_texture.altitude = 1000.0
+        sky_texture.air_density = 0.430
+        sky_texture.dust_density = 0.352
+        sky_texture.ozone_density = 10.0
 
-    # Configure the sky texture with Nishita model
-    sky_texture.sky_type = "NISHITA"
-    # Disable sun disk
-    sky_texture.sun_disc = False
+        # Position the sky texture node
+        sky_texture.location = (-600, 300)
+        return sky_texture
 
-    # Configure other Nishita parameters
-    sky_texture.sun_elevation = (
-        1.0  # Sun angle above horizon in radians (about 57 degrees)
-    )
-    sky_texture.sun_rotation = 0.0  # Sun angle around the horizon in radians
-    sky_texture.altitude = 1000.0  # Viewer altitude in km
-    sky_texture.air_density = 0.430
-    sky_texture.dust_density = 0.352
-    sky_texture.ozone_density = 10.0
+    def create_nodes():
+        sky_texture = configure_sky_texture()
 
-    # Create background node for sky
-    background_sky = nodes.new(type="ShaderNodeBackground")
-    background_sky.inputs[1].default_value = 0.2
+        # Create and position the background nodes
+        background_sky = nodes.new(type="ShaderNodeBackground")
+        background_sky.location = (-400, 300)
+        background_sky.inputs[1].default_value = 0.1
 
-    # Create Musgrave texture node
-    musgrave = nodes.new(type="ShaderNodeTexMusgrave")
-    musgrave.inputs["Scale"].default_value = 3.3
-    musgrave.inputs["Detail"].default_value = 10.0
-    musgrave.inputs["Dimension"].default_value = 0.47
-    musgrave.inputs["Lacunarity"].default_value = 2.0
+        solid_blue_bg = nodes.new(type="ShaderNodeBackground")
+        solid_blue_bg.location = (-400, 150)
+        solid_blue_bg.inputs[0].default_value = (0.354671, 0.603643, 0.979584, 1)
+        solid_blue_bg.inputs[1].default_value = 0.2
 
-    # Create color ramp node
-    color_ramp = nodes.new(type="ShaderNodeValToRGB")
+        # Create and position mix shader
+        mix_shader = nodes.new(type="ShaderNodeMixShader")
+        mix_shader.location = (-200, 250)
+        mix_shader.inputs[0].default_value = 0.8
 
-    # Create second background node for Musgrave
-    background_musgrave = nodes.new(type="ShaderNodeBackground")
+        # Create and position Musgrave texture nodes
+        musgrave = nodes.new(type="ShaderNodeTexMusgrave")
+        musgrave.location = (-600, -50)
+        musgrave.inputs["Scale"].default_value = 3.3
+        musgrave.inputs["Detail"].default_value = 10.0
+        musgrave.inputs["Dimension"].default_value = 0.47
+        musgrave.inputs["Lacunarity"].default_value = 2.0
 
-    # Create Add Shader node
-    add_shader = nodes.new(type="ShaderNodeAddShader")
+        # Create and position color ramp
+        color_ramp = nodes.new(type="ShaderNodeValToRGB")
+        color_ramp.location = (-400, -50)
 
-    # Create output node
-    output = nodes.new(type="ShaderNodeOutputWorld")
+        # Create and position background for Musgrave
+        background_musgrave = nodes.new(type="ShaderNodeBackground")
+        background_musgrave.location = (-200, -50)
 
-    # Connect nodes
-    # Musgrave → Color Ramp → Background
-    links.new(musgrave.outputs[0], color_ramp.inputs[0])
-    links.new(color_ramp.outputs[0], background_musgrave.inputs[0])
+        # Create and position add shader
+        add_shader = nodes.new(type="ShaderNodeAddShader")
+        add_shader.location = (0, 200)
 
-    # Sky Texture → Background
-    links.new(sky_texture.outputs[0], background_sky.inputs[0])
+        # Create and position output node
+        output = nodes.new(type="ShaderNodeOutputWorld")
+        output.location = (200, 200)
 
-    # Both backgrounds → Add Shader
-    links.new(background_sky.outputs[0], add_shader.inputs[0])
-    links.new(background_musgrave.outputs[0], add_shader.inputs[1])
+        return {
+            "sky_texture": sky_texture,
+            "background_sky": background_sky,
+            "solid_blue_bg": solid_blue_bg,
+            "mix_shader": mix_shader,
+            "musgrave": musgrave,
+            "color_ramp": color_ramp,
+            "background_musgrave": background_musgrave,
+            "add_shader": add_shader,
+            "output": output,
+        }
 
-    # Add Shader → Output
-    links.new(add_shader.outputs[0], output.inputs[0])
+    def connect_nodes(node_dict):
+        # Sky texture to mix shader
+        links.new(
+            node_dict["sky_texture"].outputs[0], node_dict["background_sky"].inputs[0]
+        )
+        links.new(
+            node_dict["background_sky"].outputs[0], node_dict["mix_shader"].inputs[1]
+        )
+        links.new(
+            node_dict["solid_blue_bg"].outputs[0], node_dict["mix_shader"].inputs[2]
+        )
+
+        # Musgrave setup
+        links.new(node_dict["musgrave"].outputs[0], node_dict["color_ramp"].inputs[0])
+        links.new(
+            node_dict["color_ramp"].outputs[0],
+            node_dict["background_musgrave"].inputs[0],
+        )
+
+        # Connect mix shader where sky texture was previously connected
+        links.new(node_dict["mix_shader"].outputs[0], node_dict["add_shader"].inputs[0])
+        links.new(
+            node_dict["background_musgrave"].outputs[0],
+            node_dict["add_shader"].inputs[1],
+        )
+
+        # Final output
+        links.new(node_dict["add_shader"].outputs[0], node_dict["output"].inputs[0])
+
+    nodes_dict = create_nodes()
+    connect_nodes(nodes_dict)

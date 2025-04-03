@@ -78,7 +78,7 @@ class CarSideThumbnail:
         assert load_data is not None
         focused_driver = load_data.run_drivers.focused_driver
 
-        driver_obj = create_car_obj(focused_driver.team, focused_driver.last_name)
+        driver_obj, _ = create_car_obj(focused_driver.team, focused_driver.last_name)
 
         driver_obj.location = (-126.8, 3.58, 91.97)
         driver_obj.rotation_euler = (

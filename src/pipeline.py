@@ -1,3 +1,5 @@
+"""Run the pipeline based on the mode, batch or default."""
+
 import json
 from pathlib import Path
 
@@ -19,19 +21,29 @@ def run_for_config(config: Config, project_root: Path):
         project_root=project_root,
     )
 
+    # load data will be the same regardless of shorts or 4k mode
     app_state.load_data = load_data_main.load_data_main(config, app_state)
     log_info("Data loaded successfully.")
 
-    render_main(config, app_state)
-    log_info("Rendering completed.")
+    def post_load_data(config: Config):
+        render_main(config, app_state)
+        log_info("Rendering completed.")
 
-    video_edit_main(config, app_state)
-    log_info("Video editing completed.")
+        video_edit_main(config, app_state)
+        log_info("Video editing completed.")
 
-    if not config["dev_settings"]["ui_mode"]:
-        log_info("UI mode is disabled.")
-        socials_upload_main.socials_upload_main(config)
-        log_info("Socials upload completed.")
+        if not config["dev_settings"]["ui_mode"]:
+            log_info("UI mode is disabled.")
+            socials_upload_main.socials_upload_main(config)
+            log_info("Socials upload completed.")
+
+    if config["render"]["is_both_mode"]:
+        config["render"]["is_shorts_output"] = True
+        post_load_data(config)
+        config["render"]["is_shorts_output"] = False
+        post_load_data(config)
+    else:
+        post_load_data(config)
 
 
 def get_config(file: Path) -> Config:
@@ -49,14 +61,7 @@ def run_single_mode(project_root: Path):
     config = (
         get_config(config_file) if config_file.exists() else get_config(template_file)
     )
-
-    if config["render"]["is_both_mode"]:
-        config["render"]["is_shorts_output"] = True
-        run_for_config(config, project_root)
-        config["render"]["is_shorts_output"] = False
-        run_for_config(config, project_root)
-    else:
-        run_for_config(config, project_root)
+    run_for_config(config, project_root)
 
 
 def run_batch_mode(project_root: Path):
@@ -73,13 +78,13 @@ def run_batch_mode(project_root: Path):
 
     for config_file in config_files:
         log_info(f"Processing config: {config_file.name}")
-        with open(config_file, "r") as f:
-            config = json.load(f)
+        config = get_config(config_file)
         run_for_config(config, project_root)
     return 0
 
 
 def run_pipeline(project_root: Path, is_batch_mode: bool):
+    """Run the pipeline based on the mode."""
     if is_batch_mode:
         return run_batch_mode(project_root)
     else:

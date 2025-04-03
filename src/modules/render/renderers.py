@@ -14,7 +14,6 @@ from src.modules.render.add_funcs import (
     add_formula_viz_car,
     add_light,
     add_sky_texture,
-    add_snow_background,
     add_status_track,
     add_track,
     add_track_idx_line,
@@ -82,7 +81,7 @@ class AbstractRenderer(ABC):
         bpy.data.worlds["World"].node_tree.nodes["Background"].inputs[  # pyright: ignore
             0
         ].default_value = (0.045, 0.046, 0.051, 1)  # pyright: ignore
-        add_snow_background.add_snow_background()
+        # add_snow_background.add_snow_background()
         add_sky_texture.add_sky_texture()
 
     def trigger_render(self):
