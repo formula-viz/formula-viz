@@ -23,6 +23,7 @@ class RenderConfig(TypedDict):
     output: str
     start_buffer_frames: int
     end_buffer_frames: int
+    auto_track_mode: bool
 
 
 class YouTubeConfig(TypedDict):
@@ -48,8 +49,8 @@ class MixedConfig(TypedDict):
 
     enabled: bool
     title: str  # since the mixed config may be complicated, custom title
-    drivers: dict[
-        str, dict[str, Union[str, int]]
+    drivers: list[
+        dict[str, Union[str, int]]
     ]  # dict from driver name to year of the data we want
 
 

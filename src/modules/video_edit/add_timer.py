@@ -57,8 +57,13 @@ def add_frame_counter(
             frame_end=strip_end,
         )
 
-        # Configure text display
-        text_strip.font = bpy.data.fonts.load(str(file_utils.project_paths.BOLD_FONT))
+        text_strip.font = bpy.data.fonts.load(
+            str(
+                file_utils.project_paths.FONTS_DIR
+                / "Azeret_Mono/static/AzeretMono-ExtraBold.ttf"
+            )
+        )
+
         # text_strip.font = bpy.data.fonts.load(str(file_utils.project_paths.IMPACT_FONT))
         text_strip.color = (1, 1, 1, 1)  # White text
         text_strip.use_shadow = True
@@ -66,10 +71,10 @@ def add_frame_counter(
 
         if config["render"]["is_shorts_output"]:
             text_strip.location = (0.26, 0.85)
-            text_strip.font_size = 70
+            text_strip.font_size = 90
         else:
             text_strip.location = (0.5, 0.14)
-            text_strip.font_size = 80
+            text_strip.font_size = 100
 
         # Set the text based on the current frame
         # For a counter display that's consistent across frames

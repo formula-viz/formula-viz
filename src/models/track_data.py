@@ -20,5 +20,5 @@ class TrackData:
     outer_points: list[tuple[float, float, float]]
     outer_trace_line: Optional[LineData]
 
-    inner_curb_points: list[tuple[float, float, float]]
-    outer_curb_points: list[tuple[float, float, float]]
+    inner_curb_points: Optional[list[tuple[float, float, float]]]
+    outer_curb_points: Optional[list[tuple[float, float, float]]]

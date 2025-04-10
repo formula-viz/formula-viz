@@ -21,6 +21,7 @@ from src.modules.render.add_funcs import (
 
 # from src.modules.render.thumbnail.create_thumbnail import ThumbnailGenerator
 from src.modules.render.thumbnails import gen_thumbnails
+from src.utils import file_utils
 from src.utils.colors import (
     SECTOR_1_COLOR,
     SECTOR_2_COLOR,
@@ -145,15 +146,27 @@ class AbstractRenderer(ABC):
         """
         self.setup_world()
         # add_background_grid.main()
-
         gen_thumbnails.gen_thumbnails(self.config, self.state)
         if self.config["dev_settings"]["thumbnail_mode"]:
             return
 
-        self.setup_world()
+        if self.config["render"]["auto_track_mode"]:
+            self.setup_world()
+            self.add_drivers()
+            self.add_track()
+        else:
+            track = self.config["track"].lower()
+            year = self.config["year"]
+            track_file = (
+                file_utils.project_paths.BLENDER_DIR
+                / "tracks"
+                / f"{track}-{year}.blend"
+            )
+            bpy.ops.wm.open_mainfile(filepath=str(track_file))
+            if bpy.context.view_layer:
+                bpy.context.view_layer.update()
+            self.add_drivers()
 
-        self.add_drivers()
-        self.add_track()
         self.add_camera()
 
         add_status_track.StatusTrack(

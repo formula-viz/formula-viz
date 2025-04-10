@@ -1,16 +1,16 @@
 {
   "track": "JAPAN",
-  "year": 2024,
+  "year": 2025,
   "type": "rest-of-field",
   "session": "Q",
   "drivers": ["Verstappen"],
   "mixed_mode": {
     "enabled": false,
     "title": "How much faster was 2019 f1 compared to 2024? Japan Qualifying: Vettel 2019 vs Verstappen 2024",
-    "drivers": {
-      "Vettel": { "year": 2019, "session": "Q" },
-      "Verstappen": { "year": 2024, "session": "Q" }
-    }
+    "drivers": [
+      { "name": "Verstappen", "year": 2025, "session": "Q" },
+      { "name": "Vettel", "year": 2019, "session": "Q" }
+    ]
   },
   "dev_settings": {
     "ui_mode": false,
@@ -22,11 +22,12 @@
     "engine": "eevee",
     "fps": 30,
     "samples": 32,
-    "is_both_mode": false,
+    "is_both_mode": true,
     "is_shorts_output": true,
     "output": "render-output.mp4",
     "start_buffer_frames": 15,
-    "end_buffer_frames": 55
+    "end_buffer_frames": 55,
+    "auto_track_mode": true
   },
   "post_process": {
     "output": "post-process-output.mp4",
@@ -34,7 +35,7 @@
   },
   "socials": {
     "youtube": {
-      "title": "How Verstappen won pole last year at Japan",
+      "title": "Verstappen vs All Ghost Cars at Suzuka Quali 2025 #f1",
       "service_account_path": "formula-viz-981f62016605.json",
       "visibility": "unlisted",
       "publish_at": null

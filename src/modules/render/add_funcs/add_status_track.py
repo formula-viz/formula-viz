@@ -8,6 +8,7 @@ and scales appropriately based on the output mode (shorts or landscape).
 import math
 from typing import Tuple
 
+import bmesh
 import bpy
 from fastf1.mvapi.data import CircuitInfo
 from mathutils import Vector
@@ -76,16 +77,12 @@ class StatusTrack:
         )
 
     def _create_parent_empty(self):
-        bpy.ops.object.empty_add(type="PLAIN_AXES", location=(0, 0, 0))  # pyright: ignore
-        active_obj = bpy.context.active_object
-        if not active_obj:
-            raise ValueError(
-                "Failed to create parent empty: Active object is not a valid Blender Object"
-            )
-        self.parent_empty = active_obj
-        self.parent_empty.hide_render = True
-        self.parent_empty.hide_viewport = True
-        self.parent_empty.name = "StatusTrackEmptyParent"
+        empty_obj = bpy.data.objects.new("StatusTrackEmptyParent", None)
+        empty_obj.empty_display_type = "PLAIN_AXES"
+        bpy.context.collection.objects.link(empty_obj)
+        empty_obj.hide_viewport = True
+        empty_obj.hide_render = True
+        self.parent_empty = empty_obj
 
     def _widen_track(
         self, new_track_data: TrackData, total_widen: int
@@ -104,7 +101,7 @@ class StatusTrack:
         new_outer_points: list[tuple[float, float, float]] = []
 
         for inner_point, outer_point in zip(
-            new_track_data.inner_curb_points, new_track_data.outer_curb_points
+            new_track_data.inner_points, new_track_data.outer_points
         ):
             # Calculate vector from inner to outer point
             vector_x = outer_point[0] - inner_point[0]
@@ -216,7 +213,7 @@ class StatusTrack:
         # we want to create an inner and outer spread, essentially
         spread_a = []
         spread_b = []
-        for i in range(len(points)):
+        for i in range(len(points) - 1):
             # find vec between cur and prev
             next = points[i + 1] if i < len(points) - 1 else points[0]
             cur = points[i]
@@ -225,6 +222,7 @@ class StatusTrack:
             # find the perpendicular
             perp = (-vec[1], vec[0], 0)
             length = math.sqrt(perp[0] ** 2 + perp[1] ** 2 + perp[2] ** 2)
+            print(i, cur, next)
             perp_norm = (perp[0] / length, perp[1] / length, perp[2] / length)
 
             spread_a.append(
@@ -416,7 +414,7 @@ class StatusTrack:
             track_data_copy, driver_dfs_copy
         )
 
-        inner_points_copy, outer_points_copy = self._widen_track(track_data_copy, 10)
+        inner_points_copy, outer_points_copy = self._widen_track(track_data_copy, 14)
         # inner_points_copy = self._wipe_z_vals(inner_points_copy)
         # outer_points_copy = self._wipe_z_vals(outer_points_copy)
         track_width, track_height = self._get_track_dimensions(
@@ -651,12 +649,6 @@ class StatusTrack:
         rotated_outer_points = [
             _rotate_point(p, rotation_angle) for p in track_data.outer_points
         ]
-        rotated_inner_curb_points = [
-            _rotate_point(p, rotation_angle) for p in track_data.inner_curb_points
-        ]
-        rotated_outer_curb_points = [
-            _rotate_point(p, rotation_angle) for p in track_data.outer_curb_points
-        ]
 
         # Apply rotation to driver positions
         for driver, df in driver_dfs.items():
@@ -685,8 +677,8 @@ class StatusTrack:
             None,
             rotated_outer_points,
             None,
-            rotated_inner_curb_points,
-            rotated_outer_curb_points,
+            None,
+            None,
         )
 
         return rotated_track_data, driver_dfs
@@ -722,8 +714,6 @@ class StatusTrack:
         # Apply offset to all point sets
         new_inner_points = _apply_offset(track_data.inner_points, offset)
         new_outer_points = _apply_offset(track_data.outer_points, offset)
-        new_inner_curb_points = _apply_offset(track_data.inner_curb_points, offset)
-        new_outer_curb_points = _apply_offset(track_data.outer_curb_points, offset)
 
         # Apply the same offset to all driver DataFrames
         centered_driver_dfs = {}
@@ -740,8 +730,8 @@ class StatusTrack:
             None,
             new_outer_points,
             None,
-            new_inner_curb_points,
-            new_outer_curb_points,
+            None,
+            None,
         )
 
         return centered_track_data, centered_driver_dfs
@@ -778,14 +768,16 @@ class StatusTrack:
         self, driver_name: str, hex_color: str, idx: int
     ) -> bpy.types.Object:
         # Create a circle (disk) instead of a sphere using circle primitive
-        bpy.ops.mesh.primitive_circle_add(
-            vertices=32,  # Number of vertices for the circle
-            radius=27.5,  # Radius of the circle
-            fill_type="TRIFAN",  # Fill the circle to create a disk
-        )
-        dot = bpy.context.active_object
-        if dot is None:
-            raise ValueError("Failed to create indicator dot")
+        # Create circle mesh and object directly without operators
+        circle_mesh = bpy.data.meshes.new(f"IndicatorDot{driver_name}Mesh")
+        dot = bpy.data.objects.new(f"IndicatorDot{driver_name}", circle_mesh)
+        bpy.context.collection.objects.link(dot)
+
+        # Create circle vertices for the dot
+        bm = bmesh.new()
+        bmesh.ops.create_circle(bm, cap_ends=True, segments=32, radius=27.5)
+        bm.to_mesh(circle_mesh)
+        bm.free()
         dot.name = f"IndicatorDot{driver_name}"
         dot_mat = create_material(
             hex_to_blender_rgb(hex_color),
@@ -796,14 +788,17 @@ class StatusTrack:
         )
         dot.data.materials.append(dot_mat)  # pyright: ignore
 
-        bpy.ops.mesh.primitive_circle_add(
-            vertices=32,
-            radius=35,  # Slightly larger for border
-            fill_type="NGON",  # No fill, just the edge
-        )
-        border = bpy.context.active_object
-        if border is None:
-            raise ValueError("Failed to create indicator border")
+        # Create border using the same approach as the dot
+        border_mesh = bpy.data.meshes.new(f"IndicatorBorder{driver_name}Mesh")
+        border = bpy.data.objects.new(f"IndicatorBorder{driver_name}", border_mesh)
+        bpy.context.collection.objects.link(border)
+
+        # Create circle vertices for the border
+        bm_border = bmesh.new()
+        bmesh.ops.create_circle(bm_border, cap_ends=True, segments=32, radius=35)
+        bm_border.to_mesh(border_mesh)
+        bm_border.free()
+
         border_mat = create_material(
             (1, 1, 1), f"IndicatorBorderMat{driver_name}", 0.0, 1.0, 1.0
         )

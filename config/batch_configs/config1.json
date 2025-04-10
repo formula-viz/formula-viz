@@ -1,16 +1,16 @@
 {
   "track": "JAPAN",
-  "year": 2024,
-  "type": "rest-of-field",
+  "year": 2025,
+  "type": "head-to-head",
   "session": "Q",
-  "drivers": ["Tsunoda"],
+  "drivers": ["Verstappen", "Perez"],
   "mixed_mode": {
-    "enabled": false,
-    "title": "How much faster was 2019 f1 compared to 2024? Japan Qualifying: Vettel 2019 vs Verstappen 2024",
-    "drivers": {
-      "Vettel": { "year": 2019, "session": "Q" },
-      "Verstappen": { "year": 2024, "session": "Q" }
-    }
+    "enabled": true,
+    "title": "How Verstappen beat Vettel's 2019 Suzuka Lap Record #f1",
+    "drivers": [
+      { "name": "Verstappen", "year": 2025, "session": "Q" },
+      { "name": "Vettel", "year": 2019, "session": "Q" }
+    ]
   },
   "dev_settings": {
     "ui_mode": false,
@@ -23,10 +23,11 @@
     "fps": 30,
     "samples": 32,
     "is_both_mode": true,
-    "is_shorts_output": true,
+    "is_shorts_output": false,
     "output": "render-output.mp4",
     "start_buffer_frames": 15,
-    "end_buffer_frames": 55
+    "end_buffer_frames": 55,
+    "auto_track_mode": true
   },
   "post_process": {
     "output": "post-process-output.mp4",
@@ -34,9 +35,9 @@
   },
   "socials": {
     "youtube": {
-      "title": "Yuki's quali performance last year at Japan. How will he do in the Red Bull?",
+      "title": "How Verstappen beat Vettel's 2019 Suzuka Lap Record #f1",
       "service_account_path": "formula-viz-981f62016605.json",
-      "visibility": "unlisted",
+      "visibility": "public",
       "publish_at": null
     }
   }

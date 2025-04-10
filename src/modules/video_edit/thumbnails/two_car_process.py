@@ -6,18 +6,18 @@ from src.utils import file_utils
 from src.utils.colors import hex_to_blender_rgb
 
 
-class CarSideProcess:
+class TwoCarProcess:
     def __init__(self, config: Config, app_state: AppState):
         self.config = config
         self.app_state = app_state
         self.seq_editor = bpy.context.scene.sequence_editor
         self.cur_channel = 1
 
-        self.raw_path = "output/car-side-thumbnail-raw.png"
-        self.output_path = "output/car-side-thumbnail.png"
+        self.raw_path = "output/two-car-thumbnail-raw.png"
+        self.output_path = "output/two-car-thumbnail.png"
 
         self._add_raw()
-        # self._add_driver_images()
+        self._add_driver_image()
         self._add_color_border()
         self._add_formula_viz_circle_icon()
 
@@ -104,29 +104,22 @@ class CarSideProcess:
         circle_icon.transform.offset_x = -1393
         circle_icon.transform.offset_y = 541
 
-    def _add_driver_images(self):
+    def _add_driver_image(self):
         load_data = self.app_state.load_data
         assert load_data is not None
-        if self.config["type"] == "head-to-head":
-            drivers = load_data.run_drivers.drivers
-            if len(drivers) == 2:
-                # if there are 2 drivers in the head to head, then we want to have one image on the left, one on the right
-                for i, driver in enumerate(drivers):
-                    driver_image_path = file_utils.project_paths.get_driver_image_path(
-                        driver
-                    )
+        focused_driver = load_data.run_drivers.focused_driver
 
-                    driver_image_strip = self.seq_editor.sequences.new_image(
-                        name="FastForwardIndicator",
-                        filepath=str(driver_image_path),
-                        channel=self.cur_channel,  # Place it one channel above the current channel
-                        frame_start=1,
-                    )
-                    self.cur_channel += 1
+        driver_img_path = file_utils.project_paths.get_driver_image_path(focused_driver)
 
-                    driver_image_strip.transform.offset_x = -1300 if i == 0 else 1300
-                    driver_image_strip.transform.offset_y = -500
-                    driver_image_strip.transform.scale_x = 1.5
-                    driver_image_strip.transform.scale_y = 1.5
-        else:
-            pass
+        driver_image_strip = self.seq_editor.sequences.new_image(
+            name="DriverImage",
+            filepath=str(driver_img_path),
+            channel=self.cur_channel,  # Place it one channel above the current channel
+            frame_start=1,
+        )
+        self.cur_channel += 1
+
+        driver_image_strip.transform.offset_x = 900
+        driver_image_strip.transform.offset_y = 0
+        driver_image_strip.transform.scale_x = 2.5
+        driver_image_strip.transform.scale_y = 2.5

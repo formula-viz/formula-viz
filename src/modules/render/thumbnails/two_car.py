@@ -10,12 +10,12 @@ from src.modules.render.render_animation import setup_ui_mode_viewport
 from src.utils.logger import log_info
 
 
-class CarSideThumbnail:
+class TwoCarThumbnail:
     def __init__(self, config: Config, state: AppState):
         self.config = config
         self.state = state
 
-        self.output_path = "output/car-side-thumbnail-raw.png"
+        self.output_path = "output/two-car-thumbnail-raw.png"
 
         add_light.main()
 
@@ -23,7 +23,7 @@ class CarSideThumbnail:
         assert thumbnail_track_data is not None
         add_track.main(thumbnail_track_data, None)
 
-        self._add_driver_obj()
+        self._add_driver_objs()
         self._add_camera()
 
         if config["dev_settings"]["ui_mode"]:
@@ -59,18 +59,35 @@ class CarSideThumbnail:
 
         bpy.ops.render.render(write_still=True)  # pyright: ignore
 
-    def _add_driver_obj(self):
+    def _add_driver_objs(self):
         load_data = self.state.load_data
         assert load_data is not None
-        focused_driver = load_data.run_drivers.focused_driver
+        run_drivers = load_data.run_drivers
 
-        driver_obj, _ = create_car_obj(focused_driver.team, focused_driver.last_name)
+        focused_driver = run_drivers.focused_driver
+        secondary_driver = next(
+            (driver for driver in run_drivers.drivers if driver != focused_driver), None
+        )
+        assert secondary_driver is not None
 
-        driver_obj.location = (-126.8, 3.58, 91.79)
-        driver_obj.rotation_euler = (
-            math.radians(-4),
-            math.radians(1),
+        focused_driver_obj, _ = create_car_obj(
+            focused_driver.team, focused_driver.last_name
+        )
+        focused_driver_obj.location = (-126.8, 3.58, 91.85)
+        focused_driver_obj.rotation_euler = (
+            math.radians(-3.5),
+            math.radians(0),
             math.radians(-90),
+        )
+
+        secondary_driver_obj, _ = create_car_obj(
+            secondary_driver.team, secondary_driver.last_name
+        )
+        secondary_driver_obj.location = (-120.7, 0.48, 91.6)
+        secondary_driver_obj.rotation_euler = (
+            math.radians(-2.5),
+            math.radians(0),
+            math.radians(-84),
         )
 
     def _add_camera(self):
@@ -81,10 +98,10 @@ class CarSideThumbnail:
         bpy.context.scene.camera = camera_obj
         bpy.context.scene.collection.objects.link(camera_obj)
 
-        camera_obj.location = (-130.2, 13.227, 95.456)
+        camera_obj.location = (-152.37, 7.6835, 99.377)
         camera_obj.rotation_euler = (
-            math.radians(-105),
+            math.radians(-103.56),
             math.radians(-180),
-            math.radians(0),
+            math.radians(71.12),
         )
-        camera.lens = 31
+        camera.lens = 50

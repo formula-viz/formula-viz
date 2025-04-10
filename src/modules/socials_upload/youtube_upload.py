@@ -131,10 +131,15 @@ def main(config: Config, mp4_filepath: str):
     video_id = response["id"]
     video_url = f"https://www.youtube.com/watch?v={video_id}"
 
-    thumbnail_path = resize_yt_thumbnail_if_needed("output/car-side-thumbnail.png")
+    car_side_thumbnail_path = resize_yt_thumbnail_if_needed(
+        "output/car-side-thumbnail.png"
+    )
+    two_car_thumbnail_path = resize_yt_thumbnail_if_needed(
+        "output/two-car-thumbnail.png"
+    )
     youtube.thumbnails().set(
         videoId=video_id,
-        media_body=MediaFileUpload(thumbnail_path, mimetype="image/png"),
+        media_body=MediaFileUpload(two_car_thumbnail_path, mimetype="image/png"),
     ).execute()
 
     return video_url

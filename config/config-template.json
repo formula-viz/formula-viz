@@ -17,7 +17,8 @@
     "is_shorts_output": true,
     "output": "render-output.mp4",
     "start_buffer_frames": 15,
-    "end_buffer_frames": 70
+    "end_buffer_frames": 55,
+    "auto_track_mode": false
   },
   "post_process": {
     "output": "post-process-output.mp4",

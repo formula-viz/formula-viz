@@ -64,16 +64,13 @@ def create_parent_empty(
         location = (-0.04, -0.12, -1)
         scale = (0.7, 0.7, 0.7)
 
-    bpy.ops.object.empty_add(type="PLAIN_AXES", location=location)
-    empty_parent = bpy.context.active_object
-    if not isinstance(empty_parent, bpy.types.Object):
-        raise ValueError("Failed to create empty parent object")
-
-    empty_parent.name = "CarAndTextParent"
-    empty_parent.scale = scale
-
+    empty_parent = bpy.data.objects.new("CarAndTextParent", None)
+    empty_parent.empty_display_type = "PLAIN_AXES"
+    bpy.context.collection.objects.link(empty_parent)
     empty_parent.hide_viewport = True
     empty_parent.hide_render = True
+
+    empty_parent.scale = scale
 
     empty_parent.parent = camera_obj
     return empty_parent
@@ -81,22 +78,20 @@ def create_parent_empty(
 
 def create_text_object(animated_color_mat: bpy.types.Material):
     """Create and configure text object for the scene."""
-    bpy.ops.object.text_add(location=(0.015, 0, 0))
-    text_obj = bpy.context.active_object
-    if not isinstance(text_obj, bpy.types.Object):
-        raise ValueError("Failed to create text object")
+    # Create a text curve data object
+    text_data = bpy.data.curves.new(name="FormulaVizText", type="FONT")
 
-    text_obj.name = "FormulaVizText"
-
-    text_data = text_obj.data
-    if not isinstance(text_data, bpy.types.TextCurve):
-        raise ValueError("Failed to create text object: data is not a TextCurve")
-
+    # Configure the text data
     text_data.body = "formula-viz"
     text_data.font = bpy.data.fonts.load(str(file_utils.project_paths.IMPACT_FONT))
     text_data.size = 0.05
 
-    text_obj.data.materials.append(animated_color_mat)  # pyright: ignore
+    # Create the object and assign the text data to it
+    text_obj = bpy.data.objects.new("FormulaVizText", text_data)
+    text_obj.location = (0.015, 0, 0)
+
+    bpy.context.collection.objects.link(text_obj)
+    text_data.materials.append(animated_color_mat)  # pyright: ignore
 
     return text_obj
 

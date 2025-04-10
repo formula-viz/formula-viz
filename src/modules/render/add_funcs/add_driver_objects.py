@@ -62,11 +62,9 @@ def scale_and_position_car(empty_obj: bpy.types.Object) -> tuple[float, float, f
 def create_car_obj(team_id: str, driver_last_name: str):
     """Create a base F1 car object that will be used as a template for this team."""
     # Create empty object to serve as parent
-    bpy.ops.object.empty_add(type="PLAIN_AXES")
-    empty_obj = bpy.context.object
-    if empty_obj is None:
-        raise ValueError("Failed to create empty object")
-    empty_obj.name = f"{driver_last_name}{team_id}Car"
+    empty_obj = bpy.data.objects.new(f"{driver_last_name}{team_id}Car", None)
+    empty_obj.empty_display_type = "PLAIN_AXES"
+    bpy.context.collection.objects.link(empty_obj)
     empty_obj.hide_viewport = True
     empty_obj.hide_render = True
 
@@ -142,12 +140,10 @@ def create_team_base(team_id: str):
 
 def create_null_base():
     """Create a base F1 car object that will be used as a template for all drivers."""
-    bpy.ops.object.empty_add(type="PLAIN_AXES")
-    empty_obj = bpy.context.object
-    if empty_obj is None:
-        raise ValueError("Failed to create empty object")
+    empty_obj = bpy.data.objects.new("MasterEmptyCar", None)
+    empty_obj.empty_display_type = "PLAIN_AXES"
+    bpy.context.collection.objects.link(empty_obj)
 
-    empty_obj.name = "MasterEmptyCar"
     empty_obj.hide_viewport = True
     empty_obj.hide_render = True
 

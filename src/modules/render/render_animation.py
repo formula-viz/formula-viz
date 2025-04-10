@@ -64,7 +64,7 @@ def eevee_render(config: Config, num_frames: int, is_ui_mode: bool):
 
     # Motion Blur
     eevee.use_motion_blur = True  # type: ignore
-    eevee.motion_blur_shutter = 0.75  # type: ignore
+    eevee.motion_blur_shutter = 0.5  # type: ignore
 
     # Leaving Volumetrics Off, it seems to be for mist or fog
 
@@ -121,7 +121,12 @@ def setup_ui_mode_viewport(config: Config):
 
     Saves time by automated the setup like removing overlays, setting shader mode.
     """
-    window = bpy.context.window
+    # Get window directly from window_manager instead of context
+    windows = bpy.data.window_managers[0].windows
+    if not windows:
+        raise ValueError("No windows found in window manager")
+
+    window = windows[0]  # Get first window
     if not window:
         raise ValueError("Window not found")
 
@@ -140,7 +145,11 @@ def setup_ui_mode_viewport(config: Config):
                     space.region_3d.view_perspective = "CAMERA"  # type: ignore
 
     # go to frame 10 to ensure everything is positioned properly
-    bpy.context.scene.frame_set(10)  # type: ignore
+    # Use direct scene reference instead of context
+    if bpy.data.scenes:
+        bpy.data.scenes[0].frame_set(10)  # type: ignore
+    else:
+        raise ValueError("No scenes found")
 
 
 def main(config: Config, num_frames: int):

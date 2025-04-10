@@ -76,7 +76,7 @@ def load_driver_headshots(drivers: list[Driver]) -> None:
 
 
 def process_tel(
-    q: Laps, driver: Driver
+    q: Laps, driver: Driver, ff1_session: Session
 ) -> Union[Exception, tuple[Telemetry, SectorTimes]]:
     """Process telemetry data for a given driver.
 
@@ -109,6 +109,10 @@ def process_tel(
     tel.loc[:, "X"] = tel["X"] / 10
     tel.loc[:, "Y"] = tel["Y"] / 10
     tel.loc[:, "Z"] = tel["Z"] / 10
+
+    if str(ff1_session) == "2025 Season Round 3: Japanese Grand Prix - Qualifying":
+        tel.loc[:, "X"] = tel["X"] - 9.995 + 16.73 + 1.37
+        tel.loc[:, "Y"] = tel["Y"] - 27.9002 - 0.34 - 1.97
 
     total_time = str(tel["Time"].iloc[-1])
     # this is a time_delta, we want format: 1:23.342
@@ -169,7 +173,8 @@ def process_driver_session_results(
         q1, q2, q3 = laps.split_qualifying_sessions()
         # we want to get the fastest lap for the highest qualifying session which the driver reached
         if q3 is not None:
-            tel_sec = process_tel(q3, driver)
+            ff1_session.name
+            tel_sec = process_tel(q3, driver, ff1_session)
             if isinstance(tel_sec, Exception):
                 log_warn(
                     f"Failed to process telemetry data for driver {driver}: {tel_sec}"
@@ -182,7 +187,7 @@ def process_driver_session_results(
                 driver_sector_times[driver] = sector_times
 
         elif q2 is not None:
-            tel_sec = process_tel(q2, driver)
+            tel_sec = process_tel(q2, driver, ff1_session)
             if isinstance(tel_sec, Exception):
                 log_warn(
                     f"Failed to process telemetry data for driver {driver}: {tel_sec}"
@@ -195,7 +200,7 @@ def process_driver_session_results(
                 driver_sector_times[driver] = sector_times
 
         elif q1 is not None:
-            tel_sec = process_tel(q1, driver)
+            tel_sec = process_tel(q1, driver, ff1_session)
             if isinstance(tel_sec, Exception):
                 log_warn(
                     f"Failed to process telemetry data for driver {driver}: {tel_sec}"
@@ -226,9 +231,9 @@ def get_driver_tels(
 
     if config["mixed_mode"]["enabled"]:
         touched_ff1_sessions: set[tuple[int, str]] = set()
-        for driver_last_name, sub_dict in config["mixed_mode"]["drivers"].items():
-            year = int(sub_dict["year"])
-            session = str(sub_dict["session"])
+        for driver_dict in config["mixed_mode"]["drivers"]:
+            year = int(driver_dict["year"])
+            session = str(driver_dict["session"])
             if (year, session) not in touched_ff1_sessions:
                 ff1_session = ff1.get_session(year, config["track"], session)
                 ff1_session.load()
@@ -1028,9 +1033,10 @@ def get_drivers_included_in_run(
     else:
         drivers_from_config = config["mixed_mode"]["drivers"]
         full_drivers_info: list[tuple[str, str, str, int]] = []
-        for driver_last_name, sub_dict in drivers_from_config.items():
-            year = sub_dict["year"]
-            session = sub_dict["session"]
+        for driver_dict in drivers_from_config:
+            driver_last_name = driver_dict["name"]
+            year = driver_dict["year"]
+            session = driver_dict["session"]
 
             for driver_from_tel in drivers_from_tels:
                 if (

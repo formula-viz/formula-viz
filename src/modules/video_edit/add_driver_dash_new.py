@@ -1,16 +1,14 @@
+import os
+
 import bpy
+import numpy as np
 from pandas import Timedelta
+from PIL import Image
 
 from src.models.app_state import AppState
 from src.models.config import Config
 from src.models.driver import Driver, RunDrivers
 from src.utils import file_utils
-from src.utils.colors import (
-    SECTOR_1_COLOR,
-    SECTOR_2_COLOR,
-    SECTOR_3_COLOR,
-    hex_to_blender_rgb,
-)
 
 
 class DriverDash:
@@ -28,8 +26,139 @@ class DriverDash:
 
         self.start_frame = 1
         self.end_frame = bpy.context.scene.frame_end
+        if self.config["dev_settings"]["limited_frames_mode"]:
+            # we want to be able to add the graphics even if the video is shorter for testing purpose
+            self.end_frame = 3000
 
         self._add_driver_comps()
+
+    def _add_sectors_and_bar_img(self, driver: Driver, color: str, position: str):
+        scene = bpy.context.scene
+        if not scene.sequence_editor:
+            scene.sequence_editor_create()
+
+        alternative_sector_lines_and_bar_path = (
+            file_utils.project_paths.IMAGES_DIR
+            / "sectors_and_bar_alternates"
+            / f"{color}.png"
+        )
+
+        if not os.path.exists(alternative_sector_lines_and_bar_path):
+            default_sector_lines_and_bar_path = (
+                file_utils.project_paths.IMAGES_DIR / "testing.png"
+            )
+
+            # Define function to convert hex to RGB
+            def hex_to_normal_rgb(hex_color):
+                hex_color = hex_color.lstrip("#")
+                return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
+
+            # Open the default image
+            img = Image.open(default_sector_lines_and_bar_path)
+            img_data = np.array(img)
+
+            # Get RGB values from hex color
+            rgb_color = hex_to_normal_rgb(color)
+
+            # The issue is with RGB vs BGR order - PIL loads as RGB but we're checking with BGR order
+            # Use a color tolerance approach instead of exact matching
+            target_green_rgb = (74, 255, 29)
+            alt_target_green_rgb = (
+                74,
+                252,
+                29,
+            )
+
+            # Create a mask for pixels close to our target colors
+            green_mask = np.zeros(img_data.shape[:2], dtype=bool)
+
+            # Add pixels that match the first green target with some tolerance
+            color_diff1 = (
+                np.abs(img_data[:, :, 0] - target_green_rgb[0])
+                + np.abs(img_data[:, :, 1] - target_green_rgb[1])
+                + np.abs(img_data[:, :, 2] - target_green_rgb[2])
+            )
+            green_mask |= color_diff1 < 15  # Allow some tolerance for color variations
+
+            # Add pixels that match the second green target with some tolerance
+            color_diff2 = (
+                np.abs(img_data[:, :, 0] - alt_target_green_rgb[0])
+                + np.abs(img_data[:, :, 1] - alt_target_green_rgb[1])
+                + np.abs(img_data[:, :, 2] - alt_target_green_rgb[2])
+            )
+            green_mask |= color_diff2 < 15
+
+            # Get coordinates of pixels to change
+            green_pixels = np.where(green_mask)
+
+            # Print diagnostic info
+            if len(green_pixels[0]) == 0:
+                print(
+                    f"Warning: No green pixels found in image {default_sector_lines_and_bar_path}"
+                )
+                # Check some sample pixel values to understand what's in the image
+                if img_data.size > 0:
+                    sample_pixels = img_data[
+                        img_data.shape[0] // 2, img_data.shape[1] // 2
+                    ]
+                    print(f"Sample pixel RGB value: {sample_pixels}")
+
+            # Update the pixels with the new color
+            for i in range(len(green_pixels[0])):
+                y, x = green_pixels[0][i], green_pixels[1][i]
+                img_data[y, x, 0] = rgb_color[0]  # R
+                img_data[y, x, 1] = rgb_color[1]  # G
+                img_data[y, x, 2] = rgb_color[2]  # B
+
+            # Create the output directory if it doesn't exist
+            os.makedirs(
+                os.path.dirname(alternative_sector_lines_and_bar_path), exist_ok=True
+            )
+
+            # Save the modified image
+            modified_img = Image.fromarray(img_data)
+            modified_img.save(alternative_sector_lines_and_bar_path)
+
+        sector_lines_and_bar_path = alternative_sector_lines_and_bar_path
+
+        # Import sector lines and bar image
+        sectors_bar_strip = scene.sequence_editor.sequences.new_image(
+            name=f"SectorsAndBar{driver.abbrev}",
+            filepath=str(sector_lines_and_bar_path),
+            channel=self.cur_channel,
+            frame_start=self.start_frame,
+        )
+
+        if not self.config["render"]["is_shorts_output"]:
+            # Set position and duration
+            if position == "left-of-two":
+                sectors_bar_strip.transform.offset_x = -1540
+            elif position == "right-of-two":
+                sectors_bar_strip.transform.offset_x = 1565
+            elif position == "center-of-one":
+                sectors_bar_strip.transform.offset_x = 0
+            else:
+                raise ValueError(f"Invalid position: {position}")
+
+            sectors_bar_strip.transform.scale_x = 0.35
+            sectors_bar_strip.transform.scale_y = 0.35
+            sectors_bar_strip.transform.offset_y = -930
+        else:
+            # Set position and duration
+            if position == "left-of-two":
+                sectors_bar_strip.transform.offset_x = -287
+            elif position == "right-of-two":
+                sectors_bar_strip.transform.offset_x = 304
+            elif position == "center-of-one":
+                sectors_bar_strip.transform.offset_x = 0
+            else:
+                raise ValueError(f"Invalid position: {position}")
+
+            sectors_bar_strip.transform.scale_x = 0.25
+            sectors_bar_strip.transform.scale_y = 0.25
+            sectors_bar_strip.transform.offset_y = -753
+        sectors_bar_strip.frame_final_end = self.end_frame
+        self.cur_channel += 1
 
     def _add_driver_component_package(
         self,
@@ -53,7 +182,7 @@ class DriverDash:
 
         # Adjust positions based on shorts output
         if self.config["render"]["is_shorts_output"]:
-            base_y = -500
+            base_y = -450
 
             if position == "left-of-two":
                 base_x = -300
@@ -65,10 +194,6 @@ class DriverDash:
                 raise ValueError("Invalid position")
 
             image_scale = 0.5
-            color_scale_x = 0.4
-            color_scale_y = 0.02
-
-            color_y_offset = -200
 
             sectors_y_offset = -300
             sectors_x_offset = -150
@@ -84,10 +209,6 @@ class DriverDash:
                 raise ValueError("Invalid position")
 
             image_scale = 0.7
-            color_scale_x = 0.16
-            color_scale_y = 0.02
-
-            color_y_offset = -300
 
             sectors_y_offset = -425
             sectors_x_offset = -150
@@ -102,17 +223,7 @@ class DriverDash:
         )
         self.cur_channel += 1
 
-        # Color Bar
-        color_strip = self._add_color_strip_to_vse(
-            name=f"{driver.abbrev}Color",
-            channel=self.cur_channel,
-            position_x=base_x,
-            position_y=base_y + color_y_offset,
-            scale_x=color_scale_x,
-            scale_y=color_scale_y,
-            color=hex_to_blender_rgb(color),
-        )
-        self.cur_channel += 1
+        self._add_sectors_and_bar_img(driver, color, position)
 
         # Add sector times
         self._add_driver_sector_times(
@@ -146,29 +257,6 @@ class DriverDash:
         sector_time_x_positions = [base_x + i * x_hop for i in range(3)]
         text_size = 30 if self.config["render"]["is_shorts_output"] else 40
 
-        # Sector underlines
-        def add_sector_underlines():
-            colors = [SECTOR_1_COLOR, SECTOR_2_COLOR, SECTOR_3_COLOR]
-            for i in range(3):
-                color = scene.sequence_editor.sequences.new_effect(
-                    name="SectorUnderline",
-                    type="COLOR",
-                    channel=self.cur_channel,
-                    frame_start=self.start_frame,
-                    frame_end=self.end_frame,
-                )
-                color.transform.offset_x = base_x + i * x_hop
-                color.transform.offset_y = base_y
-                color.transform.scale_x = (
-                    0.09 if self.config["render"]["is_shorts_output"] else 0.0525
-                )
-                color.transform.scale_y = (
-                    0.005 if self.config["render"]["is_shorts_output"] else 0.007
-                )
-                color.color = hex_to_blender_rgb(colors[i])
-                self.cur_channel += 1
-
-        add_sector_underlines()
         y_up = 40 if self.config["render"]["is_shorts_output"] else 50
         self._add_sector_times(
             driver, sector_package, text_size, sector_time_x_positions, base_y + y_up
@@ -244,7 +332,10 @@ class DriverDash:
 
         sector_packages = self._process_sector_times()
 
-        if self.config["type"] == "rest-of-field":
+        if (
+            self.config["type"] == "rest-of-field"
+            or len(load_data.run_drivers.drivers) >= 3
+        ):
             driver = load_data.run_drivers.focused_driver
             driver_color = load_data.run_drivers.driver_applied_colors[driver]
 
@@ -380,7 +471,6 @@ class DriverDash:
             offset_from_quickest: Timedelta,
             idx: int,
         ):
-            # Create the text strip
             text_strip = scene.sequence_editor.sequences.new_effect(
                 name="SectorCounter",
                 type="TEXT",

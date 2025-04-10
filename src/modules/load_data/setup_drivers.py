@@ -34,10 +34,10 @@ def setup_drivers_h2h(
     drivers_in_color_order = []
     new_driver_dfs: dict[Driver, DataFrame] = {}
     if config["mixed_mode"]["enabled"]:
-        for driver_last_name, driver_dict in config["mixed_mode"]["drivers"].items():
+        for driver_dict in config["mixed_mode"]["drivers"]:
             for driver_class in driver_dfs.keys():
                 if (
-                    driver_last_name == driver_class.last_name
+                    driver_dict["name"] == driver_class.last_name
                     and driver_dict["year"] == driver_class.year
                     and driver_dict["session"] == driver_class.session
                 ):

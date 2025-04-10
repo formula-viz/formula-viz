@@ -5,7 +5,8 @@ from src.models.load_data import LoadData
 from src.modules.load_data import (
     add_sectors_finished,
     load_driver_data,
-    load_track_data,
+    load_track_data_auto,
+    load_track_data_custom,
 )
 from src.modules.load_data.setup_drivers import setup_drivers_h2h, setup_drivers_rof
 from src.modules.load_data.setup_fast_forward import set_fast_forward_frames
@@ -15,13 +16,19 @@ from src.utils.logger import log_info
 def load_data_main(config: Config, app_state: AppState):
     log_info(f"Loading data for {config['type']} race")
 
-    track_data = load_track_data.main(config)
+    # the track data for the thumbnail uses the same track everytime
     config_copy = config.copy()
     config_copy["track"] = "JAPAN"
     config_copy["year"] = 2024
-    thumbnail_track_data = load_track_data.main(config_copy)
+    thumbnail_track_data = load_track_data_auto.main(config_copy)
     app_state.thumbnail_track_data = thumbnail_track_data
 
+    # even when we are using a custom track file, we still need track data and inner / outer points
+    # in order to properly adjust the Z values of the cars so they don't float or clip under the track
+    if config["render"]["auto_track_mode"]:
+        track_data = load_track_data_auto.main(config)
+    else:
+        track_data = load_track_data_custom.main(config)
     (
         driver_dfs,
         driver_sector_times,

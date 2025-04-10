@@ -1,9 +1,9 @@
 {
   "track": "JAPAN",
-  "year": 2024,
-  "type": "rest-of-field",
+  "year": 2025,
+  "type": "head-to-head",
   "session": "Q",
-  "drivers": ["Norris"],
+  "drivers": ["Leclerc", "Hamilton"],
   "mixed_mode": {
     "enabled": false,
     "title": "How much faster was 2019 f1 compared to 2024? Japan Qualifying: Vettel 2019 vs Verstappen 2024",
@@ -26,7 +26,8 @@
     "is_shorts_output": true,
     "output": "render-output.mp4",
     "start_buffer_frames": 15,
-    "end_buffer_frames": 55
+    "end_buffer_frames": 55,
+    "auto_track_mode": true
   },
   "post_process": {
     "output": "post-process-output.mp4",
@@ -34,7 +35,7 @@
   },
   "socials": {
     "youtube": {
-      "title": "How Norris qualified last year at Suzuka. Will he win pole in 2025?",
+      "title": "Where Leclerc is faster than Hamilton, Japan Quali 2025 #f1",
       "service_account_path": "formula-viz-981f62016605.json",
       "visibility": "unlisted",
       "publish_at": null

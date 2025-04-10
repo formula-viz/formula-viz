@@ -9,7 +9,7 @@ from src.models.app_state import AppState
 from src.models.config import Config
 from src.modules.video_edit import (
     add_background_music,
-    add_driver_dash,
+    add_driver_dash_new,
     add_fast_forward_indicator,
     add_timer,
 )
@@ -41,6 +41,9 @@ def edit_video(config: Config, app_state: AppState):
 
     log_info("Processing thumbnails first...")
     process_thumbnails.process_thumbnails(config, app_state)
+    if config["dev_settings"]["ui_mode"] and config["dev_settings"]["thumbnail_mode"]:
+        return
+
     if bpy.context.scene.sequence_editor:
         for sequence in bpy.context.scene.sequence_editor.sequences_all:
             bpy.context.scene.sequence_editor.sequences.remove(sequence)
@@ -74,7 +77,7 @@ def edit_video(config: Config, app_state: AppState):
     bpy.context.scene.frame_end = video_strip.frame_final_duration
 
     log_info(
-        f"Added video file: {file_utils.project_paths.OUTPUT_DIR / config['render']['output']}"
+        f"Added video file: {file_utils.project_paths.OUTPUT_DIR / config['render']['output']}, with frames: {video_strip.frame_final_duration}"
     )
 
     load_data = app_state.load_data
@@ -95,7 +98,7 @@ def edit_video(config: Config, app_state: AppState):
     sped_point_df_with_times = focused_driver_run_data.sped_point_df
 
     cur_channel = 2
-    driver_dash = add_driver_dash.DriverDash(
+    driver_dash = add_driver_dash_new.DriverDash(
         app_state,
         config,
         run_drivers,
