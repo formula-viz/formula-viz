@@ -3,8 +3,6 @@
 Mimic the default viewport blender background grid but improved and visible during the render.
 """
 
-from typing import Optional
-
 import bpy
 
 from src.utils.logger import log_info
@@ -15,7 +13,7 @@ def create_grid_curves(
     size: int = 1000,
     spacing: float = 1.0,
     offset: tuple[float, float, float] = (0, 0, 0),
-    collection: Optional[bpy.types.Collection] = None,
+    collection=None,
 ):
     """Create grid using curves instead of mesh."""
     curve_data = bpy.data.curves.new("GridCurve", type="CURVE")
@@ -28,7 +26,7 @@ def create_grid_curves(
     for i in range(-size // 2, size // 2 + 1):
         # X direction
         spline = curve_data.splines.new("POLY")
-        spline.points.add(1)  # pyright: ignore
+        spline.points.add(1)
         pos = i * spacing
         spline.points[0].co = (
             -size * spacing / 2 + offset[0],
@@ -45,7 +43,7 @@ def create_grid_curves(
 
         # Y direction
         spline = curve_data.splines.new("POLY")
-        spline.points.add(1)  # pyright: ignore
+        spline.points.add(1)
         spline.points[0].co = (
             pos + offset[0],
             -size * spacing / 2 + offset[1],
@@ -64,9 +62,9 @@ def create_grid_curves(
 
     # Add to collection if specified, otherwise to scene collection
     if collection:
-        collection.objects.link(grid_obj)  # pyright: ignore
+        collection.objects.link(grid_obj)
     else:
-        bpy.context.scene.collection.objects.link(grid_obj)  # pyright: ignore
+        bpy.context.scene.collection.objects.link(grid_obj)
 
     return grid_obj
 

@@ -5,6 +5,7 @@ from typing import Optional
 
 import bmesh
 import bpy
+from bpy.types import Material
 
 from src.models.sectors import SectorsInfo
 from src.models.track_data import TrackData
@@ -19,8 +20,8 @@ def create_boxes(
     sectors_info: SectorsInfo,
     name: str,
     height: float = 0.1,
-    material: Optional[bpy.types.Material] = None,
-    alternate_material: Optional[bpy.types.Material] = None,
+    material: Optional[Material] = None,
+    alternate_material: Optional[Material] = None,
     is_pattern: bool = False,
 ):
     """Create a mesh of 3D boxes between two sets of points.
@@ -153,8 +154,8 @@ def create_planes_new(
     inner_points: list[tuple[float, float, float]],
     outer_points: list[tuple[float, float, float]],
     name: str,
-    material: Optional[bpy.types.Material] = None,
-    alternate_material: Optional[bpy.types.Material] = None,
+    material: Optional[Material] = None,
+    alternate_material: Optional[Material] = None,
     is_curb: bool = True,
 ):
     """Create a mesh plane between two sets of points with a single material.
@@ -212,9 +213,9 @@ def create_planes_curb(
     inner_points: list[tuple[float, float, float]],
     outer_points: list[tuple[float, float, float]],
     name: str,
-    default_material: bpy.types.Material,
-    curbstone_a_mat: bpy.types.Material,
-    curbstone_b_mat: bpy.types.Material,
+    default_material: Material,
+    curbstone_a_mat: Material,
+    curbstone_b_mat: Material,
     curve_threshold: float = 0.07,
 ):
     """Create a mesh plane with curb patterns only on curved sections.
@@ -461,8 +462,8 @@ def create_planes(
     inner_points: list[tuple[float, float, float]],
     outer_points: list[tuple[float, float, float]],
     name: str,
-    material: Optional[bpy.types.Material] = None,
-    alternate_material: Optional[bpy.types.Material] = None,
+    material: Optional[Material] = None,
+    alternate_material: Optional[Material] = None,
     is_curb: bool = True,
 ):
     """Create a mesh plane between two sets of points.
@@ -528,7 +529,7 @@ def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
         bpy.context.view_layer.layer_collection.children[-1]  # pyright: ignore
     )
 
-    curb_mat = create_asphalt_material((0.01, 0.01, 0.01), "CurbAsphalt")
+    curb_mat = create_asphalt_material((0.1, 0.1, 0.1), "CurbAsphalt")
     red_color = (0.128, 0, 0)
     white_color = (0.76, 0.76, 0.76)
 
@@ -554,7 +555,7 @@ def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
     # if "asphalt_track" in bpy.data.materials:
     #     track_mat = bpy.data.materials["asphalt_track"]
 
-    track_mat = create_asphalt_material()
+    track_mat = create_asphalt_material((0.05, 0.05, 0.05))
     create_planes_new(
         track_data.inner_points,
         track_data.outer_points,
@@ -562,22 +563,23 @@ def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
         track_mat,
     )
 
-    create_planes_curb(
-        track_data.outer_points,
-        track_data.outer_curb_points,
-        "CurbOuter",
-        curb_mat,
-        curbstone_a_mat,
-        curbstone_b_mat,
-    )
-    create_planes_curb(
-        track_data.inner_points,
-        track_data.inner_curb_points,
-        "CurbInner",
-        curb_mat,
-        curbstone_a_mat,
-        curbstone_b_mat,
-    )
+    if track_data.outer_curb_points and track_data.inner_curb_points:
+        create_planes_curb(
+            track_data.outer_points,
+            track_data.outer_curb_points,
+            "CurbOuter",
+            curb_mat,
+            curbstone_a_mat,
+            curbstone_b_mat,
+        )
+        create_planes_curb(
+            track_data.inner_points,
+            track_data.inner_curb_points,
+            "CurbInner",
+            curb_mat,
+            curbstone_a_mat,
+            curbstone_b_mat,
+        )
 
     if track_data.inner_trace_line and track_data.outer_trace_line and sectors_info:
         create_boxes(

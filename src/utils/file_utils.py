@@ -49,6 +49,12 @@ class FileUtils:
         self.FORMULA_VIZ_CIRCLE_ICON_PATH = (
             self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled.png"
         )
+        self.FORMULA_VIZ_CIRCLE_ICON_PATH_ORANGE = (
+            self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled-orange.png"
+        )
+        self.FORMULA_VIZ_CIRCLE_ICON_PATH_PURPLE = (
+            self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled-purple.png"
+        )
 
         self.MAIN_FONT = self.FONTS_DIR / "Formula1-Regular.ttf"
         self.BOLD_FONT = self.FONTS_DIR / "Formula1-Bold.ttf"
@@ -138,8 +144,8 @@ class FileUtils:
 
         """
         return (
-            self.ASSETS_DIR
-            / "blender"
+            self.IMAGES_DIR
+            / "generic-car-textures"
             / "alternate_textures"
             / f"{blender_obj_name.split('-')[-1]}_{hex_color}.png"
         )

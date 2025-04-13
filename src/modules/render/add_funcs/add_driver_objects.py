@@ -7,6 +7,7 @@ import time
 import bpy
 import mathutils
 import numpy as np
+from bpy.types import Object
 from PIL import Image
 
 from src.models.config import Config
@@ -16,7 +17,9 @@ from src.utils.colors import hex_to_blender_rgb, hex_to_normal_rgb
 from src.utils.logger import log_info
 
 
-def scale_and_position_car(empty_obj: bpy.types.Object) -> tuple[float, float, float]:
+def scale_and_position_car(
+    empty_obj: Object, scale: float = 3.0
+) -> tuple[float, float, float]:
     # Calculate the bounds of all objects together
     min_x = min_y = min_z = float("inf")
     max_x = max_y = max_z = float("-inf")
@@ -40,7 +43,7 @@ def scale_and_position_car(empty_obj: bpy.types.Object) -> tuple[float, float, f
 
     # Calculate current width and scaling factor
     current_width = max_x - min_x
-    scale_factor = 3.0 / current_width if current_width > 0 else 1.0
+    scale_factor = scale / current_width if current_width > 0 else 1.0
 
     for child in empty_obj.children:
         cur_scale = child.scale
@@ -86,13 +89,13 @@ def create_car_obj(team_id: str, driver_last_name: str):
             # Top level objects become children of empty
             obj.parent = empty_obj
 
-            # Set Metallic to 0.5 for all materials
-            if obj.material_slots:
-                for slot in obj.material_slots:
-                    if slot.material and slot.material.use_nodes:
-                        for node in slot.material.node_tree.nodes:
-                            if node.type == "BSDF_PRINCIPLED":
-                                node.inputs["Metallic"].default_value = 0.5
+        # Set metallic property for materials
+        if obj.material_slots:
+            for slot in obj.material_slots:
+                if slot.material and slot.material.use_nodes:
+                    for node in slot.material.node_tree.nodes:
+                        if node.type == "BSDF_PRINCIPLED":
+                            node.inputs["Metallic"].default_value = 0.75
 
     position_offset = scale_and_position_car(empty_obj)
     if team_id == "Williams":
@@ -102,6 +105,9 @@ def create_car_obj(team_id: str, driver_last_name: str):
                 child.location[1],
                 child.location[2] - 0.13,
             )
+
+    if team_id in {"Mercedes", "Williams"}:
+        position_offset = (position_offset[0], 0, position_offset[2])
 
     return empty_obj, position_offset
 
@@ -155,15 +161,10 @@ def create_null_base():
     for obj in data_to.objects:
         obj.parent = empty_obj
 
-    scale_and_position_car(empty_obj)
-    # Im not sure why this is necessary, but this fixes the floating car problem
-    for obj in empty_obj.children:
-        cur_loc = obj.location
-        obj.location = cur_loc + mathutils.Vector((0, 0, -0.8))
     return empty_obj
 
 
-def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object):
+def create_driver_from_base(driver_abbrev: str, base_empty_obj: Object):
     """Create a driver object by copying the base empty object and its children."""
     driver_collection = bpy.data.collections.new(f"{driver_abbrev.title()}CarObject")
     bpy.context.scene.collection.children.link(driver_collection)
@@ -173,9 +174,8 @@ def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object
         if src_obj.data:
             new_obj.data = src_obj.data.copy()
 
-        new_obj.name = f"{driver_abbrev.title()}Car{src_obj.name}"
+        new_obj.name = f"{driver_abbrev.title()}-{src_obj.name}"
         driver_collection.objects.link(new_obj)
-
         new_obj.parent = parent_obj
         # Ensure transforms are properly copied
         new_obj.matrix_local = src_obj.matrix_local.copy()
@@ -193,14 +193,14 @@ def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object
         #                 getattr(constraint, prop.identifier),
         #             )
 
-        # # Handle materials if needed
-        # if new_obj.material_slots:
-        #     for i, slot in enumerate(new_obj.material_slots):
-        #         if slot.material:
-        #             # Create a deep copy of the material
-        #             new_material = slot.material.copy()
-        #             new_material.name = f"{driver_abbrev.title()}-{slot.material.name}"
-        #             new_obj.material_slots[i].material = new_material
+        # Handle materials if needed
+        if new_obj.material_slots:
+            for i, slot in enumerate(new_obj.material_slots):
+                if slot.material:
+                    # Create a deep copy of the material
+                    new_material = slot.material.copy()
+                    new_material.name = f"{driver_abbrev.title()}-{slot.material.name}"
+                    new_obj.material_slots[i].material = new_material
 
         # Recursively handle children
         for child in src_obj.children:
@@ -216,11 +216,15 @@ def create_driver_from_base(driver_abbrev: str, base_empty_obj: bpy.types.Object
     driver_collection.objects.link(new_empty)
 
     new_empty.matrix_world = base_empty_obj.matrix_world.copy()
-    scale_and_position_car(new_empty)
-    new_empty.scale = (1.3, 1.3, 1.3)
 
     for obj in base_empty_obj.children:
         copy_object_and_children(obj, new_empty)
+
+    scale_and_position_car(new_empty)
+    # Im not sure why this is necessary, but this fixes the floating car problem
+    for obj in new_empty.children:
+        cur_loc = obj.location
+        obj.location = cur_loc + mathutils.Vector((0, 0, -0.8))
 
     return new_empty
 
@@ -275,7 +279,7 @@ def add_driver_keyframes(driver_obj, df):
 
 def add_driver_trail(
     driver: Driver,
-    driver_obj: bpy.types.Object,
+    driver_obj: Object,
     run_data: DriverRunData,
     base_color: str,
     trail_length=600,
@@ -539,6 +543,8 @@ def replace_color_in_image(blender_obj, hex_color, driver):
         file_utils.project_paths.get_new_texture_image_path(blender_obj.name, hex_color)
     )
 
+    print(image_path)
+
     # first check if the image already exists
     if os.path.exists(new_image_path):
         new_image = bpy.data.images.load(new_image_path)
@@ -547,11 +553,13 @@ def replace_color_in_image(blender_obj, hex_color, driver):
 
     # Read image and convert to numpy array
     with Image.open(image_path) as img:
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
         # Convert image to numpy array for faster processing
         img_array = np.array(img)
 
         # Define the colors
-        old_color = np.array(hex_to_normal_rgb("#FF472C"))
+        old_color = np.array(hex_to_normal_rgb("#808080"))
         new_color = np.array(hex_to_normal_rgb(hex_color))
 
         # Create a mask where pixels match the old color
@@ -572,7 +580,7 @@ def replace_color_in_image(blender_obj, hex_color, driver):
     image_node.image = new_image
 
 
-def set_color(driver_obj: bpy.types.Object, color: str, driver_abbrev: str):
+def set_color(driver_obj: Object, color: str, driver_abbrev: str):
     """Set color for different parts of the driver's car."""
     for child_obj in driver_obj.children:
         if "chassis" in child_obj.name.lower():
@@ -661,7 +669,7 @@ def add_color_marker_for_same_team(car_obj, color: str):
 
 def add_driver_particle_trail(
     driver: Driver,
-    driver_obj: bpy.types.Object,
+    driver_obj: Object,
     base_color: str,
     lifetime=300,
     emission_rate=1000,
@@ -754,7 +762,7 @@ def add_driver_particle_trail(
 
 def add_driver_trail_new(
     driver: Driver,
-    driver_obj: bpy.types.Object,
+    driver_obj: Object,
     position_offset: tuple[float, float, float],
     length_of_trail: int,
     run_data: DriverRunData,
@@ -843,7 +851,7 @@ def main(config: Config, run_drivers: RunDrivers):
     bpy.context.scene.collection.children.link(drivers_collection)
 
     count_by_team: dict[str, int] = {}
-    driver_objs: dict[Driver, bpy.types.Object] = {}
+    driver_objs: dict[Driver, Object] = {}
 
     base_empty_obj = create_null_base()
 
@@ -910,3 +918,13 @@ def main(config: Config, run_drivers: RunDrivers):
                         if marker.name in bpy.context.scene.collection.objects:
                             bpy.context.scene.collection.objects.unlink(marker)
                         drivers_collection.objects.link(marker)
+    else:
+        focused_marker = add_color_marker_for_same_team(
+            driver_objs[focused_driver],
+            run_drivers.driver_applied_colors[focused_driver],
+        )
+
+        # Add the focused driver marker to the drivers collection
+        if focused_marker.name in bpy.context.scene.collection.objects:
+            bpy.context.scene.collection.objects.unlink(focused_marker)
+        drivers_collection.objects.link(focused_marker)

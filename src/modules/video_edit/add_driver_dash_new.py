@@ -93,15 +93,11 @@ class DriverDash:
 
             # Print diagnostic info
             if len(green_pixels[0]) == 0:
-                print(
-                    f"Warning: No green pixels found in image {default_sector_lines_and_bar_path}"
-                )
                 # Check some sample pixel values to understand what's in the image
                 if img_data.size > 0:
                     sample_pixels = img_data[
                         img_data.shape[0] // 2, img_data.shape[1] // 2
                     ]
-                    print(f"Sample pixel RGB value: {sample_pixels}")
 
             # Update the pixels with the new color
             for i in range(len(green_pixels[0])):

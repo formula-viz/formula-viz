@@ -26,13 +26,17 @@ def run_for_config(config: Config, project_root: Path):
     log_info("Data loaded successfully.")
 
     def post_load_data(config: Config):
-        render_main(config, app_state)
-        log_info("Rendering completed.")
+        if not config["dev_settings"]["skip_render"]:
+            render_main(config, app_state)
+            log_info("Rendering completed.")
 
         video_edit_main(config, app_state)
         log_info("Video editing completed.")
 
-        if not config["dev_settings"]["ui_mode"]:
+        if (
+            not config["dev_settings"]["ui_mode"]
+            and not config["dev_settings"]["skip_render"]
+        ):
             log_info("UI mode is disabled.")
             socials_upload_main.socials_upload_main(config)
             log_info("Socials upload completed.")

@@ -7,7 +7,6 @@ scipy
 logger
 colormath
 flask
-fake-bpy-module-latest
 google-api-python-client
 google-auth
 google-auth-oauthlib

@@ -6,12 +6,13 @@ Follows a path which is a scaled version of the driver's path, accounted for cor
 import bpy
 import mathutils
 import pandas as pd
+from bpy.types import Object
 from pandas import DataFrame, Series
 
 from src.models.config import Config
 
-MIN_CAM_DISTANCE = 100
-MAX_CAM_DISTANCE = 100
+MIN_CAM_DISTANCE = 80
+MAX_CAM_DISTANCE = 80
 
 
 def scale_frames(df_for_cam: DataFrame):
@@ -113,7 +114,7 @@ def move_with_min_max_distance(cam_df: DataFrame, car_df: DataFrame) -> DataFram
 
 def add_keyframes(
     config: Config,
-    camera_obj: bpy.types.Object,
+    camera_obj: Object,
     cam_df: DataFrame,
     driver_df: DataFrame,
     start_buffer_frames: int,
@@ -125,7 +126,8 @@ def add_keyframes(
     the camera will point at the line, providing a visual indication for the viewer that the run hasn't started.
 
     Args:
-        camera_obj (Object): The Blender camera object to animate
+        config (Config): Configuration object containing settings for the animation
+        camera_obj (bpy.types.Object): The Blender camera object to animate
         cam_df (DataFrame): DataFrame containing camera position data (X, Y, Z)
         driver_df (DataFrame): DataFrame containing driver position data (X, Y, Z)
         start_buffer_frames (int): Number of frames at the start before the main animation begins

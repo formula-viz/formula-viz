@@ -1,13 +1,14 @@
 """Add a live leaderboard to the scene."""
 
 import bpy
+from bpy.types import Object
 from mathutils import Vector
 
-from py.render.add_funcs.add_driver_circle import DriverCircle
-from py.utils.config import Config
-from py.utils.logger import log_info
-from py.utils.models import Driver
-from py.utils.project_structure import Resources
+from src.models.config import Config
+from src.models.driver import Driver
+from src.modules.render.add_funcs.add_driver_circle import DriverCircle
+from src.utils.file_utils import project_paths
+from src.utils.logger import log_info
 
 
 class LiveLeaderboard:
@@ -19,7 +20,7 @@ class LiveLeaderboard:
         drivers_and_colors: list[tuple[Driver, str]],
         car_rankings: list[list[tuple[Driver, float]]],
         is_fancy_mode: bool,
-        camera_obj: bpy.types.Object,
+        camera_obj: Object,
     ):
         """Create the live leaderboard.
 
@@ -38,7 +39,7 @@ class LiveLeaderboard:
         self.car_rankings = car_rankings
         self.is_fancy_mode = is_fancy_mode
         self.driver_objects: dict[
-            Driver, bpy.types.Object
+            Driver, Object
         ] = {}  # Store references to driver objects
         self.camera_obj = camera_obj
 
@@ -111,7 +112,7 @@ class LiveLeaderboard:
             empty_obj.location = self.position_offsets[position]
             self.driver_objects[driver] = empty_obj
 
-    def _create_element_obj(self, driver: Driver, color: str) -> bpy.types.Object:
+    def _create_element_obj(self, driver: Driver, color: str) -> Object:
         """Create an empty object as parent for the driver's text object.
 
         Args:
@@ -162,7 +163,7 @@ class LiveLeaderboard:
 
         text_obj.parent = empty_obj
 
-        text_curve.font = bpy.data.fonts.load(str(Resources.get_bold_font()))
+        text_curve.font = bpy.data.fonts.load(str(project_paths.BOLD_FONT))
 
         text_curve.align_x = "LEFT"
 

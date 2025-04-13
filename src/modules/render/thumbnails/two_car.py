@@ -2,64 +2,12 @@ import math
 
 import bpy
 
-from src.models.app_state import AppState
-from src.models.config import Config
-from src.modules.render.add_funcs import add_light, add_track
 from src.modules.render.add_funcs.add_driver_objects import create_car_obj
-from src.modules.render.render_animation import setup_ui_mode_viewport
-from src.utils.logger import log_info
+from src.modules.render.thumbnails.base_thumbnail_renderer import BaseThumbnailRenderer
 
 
-class TwoCarThumbnail:
-    def __init__(self, config: Config, state: AppState):
-        self.config = config
-        self.state = state
-
-        self.output_path = "output/two-car-thumbnail-raw.png"
-
-        add_light.main()
-
-        thumbnail_track_data = self.state.thumbnail_track_data
-        assert thumbnail_track_data is not None
-        add_track.main(thumbnail_track_data, None)
-
-        self._add_driver_objs()
-        self._add_camera()
-
-        if config["dev_settings"]["ui_mode"]:
-            setup_ui_mode_viewport(config)
-        else:
-            self._render_cycles()
-
-    def _render_cycles(self):
-        """Render the thumbnail image using Cycles and save it to output/thumbnail.png."""
-        log_info(f"Rendering thumbnail and saving to {self.output_path}")
-        scene = bpy.context.scene
-        if not scene:
-            raise ValueError("No active scene found")
-
-        scene.render.engine = "CYCLES"  # pyright: ignore
-        scene.render.image_settings.file_format = "PNG"
-        scene.render.filepath = self.output_path
-
-        scene.display_settings.display_device = "sRGB"  # type: ignore
-        scene.view_settings.view_transform = "AgX"  # type: ignore
-        scene.view_settings.look = "AgX - Base Contrast"  # type: ignore
-        scene.view_settings.gamma = 0.95  # pyright: ignore
-
-        scene.render.resolution_x = 3840  # 4K width
-        scene.render.resolution_y = 2160  # 4K height
-        scene.render.resolution_percentage = 100
-
-        # Set to GPU rendering
-        scene.cycles.device = "GPU"
-        bpy.context.preferences.addons[
-            "cycles"
-        ].preferences.compute_device_type = "CUDA"
-
-        bpy.ops.render.render(write_still=True)  # pyright: ignore
-
-    def _add_driver_objs(self):
+class TwoCarThumbnail(BaseThumbnailRenderer):
+    def _add_objects(self):
         load_data = self.state.load_data
         assert load_data is not None
         run_drivers = load_data.run_drivers

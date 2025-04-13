@@ -10,6 +10,7 @@ from typing import Tuple
 
 import bmesh
 import bpy
+from bpy.types import Object
 from fastf1.mvapi.data import CircuitInfo
 from mathutils import Vector
 from pandas import DataFrame
@@ -201,7 +202,7 @@ class StatusTrack:
             (0.027375, 0.027375, 0.027375),
             "StatusTrackBackgroundMaterial",
             0.0,
-            1.0,
+            0.7,
             1.0,
         )
         bg_obj.data.materials.append(bg_mat)  # pyright: ignore
@@ -222,7 +223,6 @@ class StatusTrack:
             # find the perpendicular
             perp = (-vec[1], vec[0], 0)
             length = math.sqrt(perp[0] ** 2 + perp[1] ** 2 + perp[2] ** 2)
-            print(i, cur, next)
             perp_norm = (perp[0] / length, perp[1] / length, perp[2] / length)
 
             spread_a.append(
@@ -241,7 +241,7 @@ class StatusTrack:
             )
         return spread_a, spread_b
 
-    def _add_start_finish_line(self, a_points, b_points) -> bpy.types.Object:
+    def _add_start_finish_line(self, a_points, b_points) -> Object:
         assert self.state.load_data is not None
         for i in range(len(a_points)):
             a_points[i] = (a_points[i][0], a_points[i][1], 1)
@@ -358,7 +358,7 @@ class StatusTrack:
             sector_1_outers,
             "Sector1",
             create_material(
-                hex_to_blender_rgb(SECTOR_1_COLOR), "Sector1StatusMat", 0.0, 1.0, 1.0
+                hex_to_blender_rgb(SECTOR_1_COLOR), "Sector1StatusMat", 0.0, 0.7, 1.0
             ),
         )
         sector2_obj = create_planes(
@@ -366,7 +366,7 @@ class StatusTrack:
             sector_2_outers,
             "Sector2",
             create_material(
-                hex_to_blender_rgb(SECTOR_2_COLOR), "Sector2StatusMat", 0.0, 1.0, 1.0
+                hex_to_blender_rgb(SECTOR_2_COLOR), "Sector2StatusMat", 0.0, 0.7, 1.0
             ),
         )
         sector3_obj = create_planes(
@@ -374,7 +374,7 @@ class StatusTrack:
             sector_3_outers,
             "Sector3",
             create_material(
-                hex_to_blender_rgb(SECTOR_3_COLOR), "Sector3StatusMat", 0.0, 1.0, 1.0
+                hex_to_blender_rgb(SECTOR_3_COLOR), "Sector3StatusMat", 0.0, 0.7, 1.0
             ),
         )
 
@@ -436,7 +436,7 @@ class StatusTrack:
         outer_spread_a, outer_spread_b = self._get_spread(outer_points_copy, spread_val)
 
         track_mat = create_material(
-            hex_to_blender_rgb("#000000"), "Status", 0.0, 1.0, 1.0
+            hex_to_blender_rgb("#000000"), "Status", 0.0, 0.7, 1.0
         )
         inner_spread_obj = create_planes(
             inner_spread_a,
@@ -530,7 +530,7 @@ class StatusTrack:
     # for now it just assumes it is in the phone mode
     def _parent_to_camera(
         self,
-        camera_obj: bpy.types.Object,
+        camera_obj: Object,
         scaled_track_width: float,
         scaled_track_height: float,
     ) -> None:
@@ -586,7 +586,7 @@ class StatusTrack:
         self,
         track_width: float,
         track_height: float,
-        camera_obj: bpy.types.Object,
+        camera_obj: Object,
         is_shorts_output: bool,
     ) -> float:
         # At 1 meter distance with 50mm lens
@@ -619,7 +619,7 @@ class StatusTrack:
 
         return min(scale_x, scale_y)
 
-    def _scale(self, optimal_scale: float, status_track_obj: bpy.types.Object) -> None:
+    def _scale(self, optimal_scale: float, status_track_obj: Object) -> None:
         status_track_obj.scale.x = optimal_scale
         status_track_obj.scale.y = optimal_scale
         status_track_obj.scale.z = optimal_scale
@@ -738,7 +738,7 @@ class StatusTrack:
 
     def _add_indicator_dot(
         self, driver_name: str, driver_color: str, new_driver_df: DataFrame, idx: int
-    ) -> bpy.types.Object:
+    ) -> Object:
         # indicator = add_flag(self.config, None, 150.0)
         is_flag = True
         indicator = None
@@ -766,7 +766,7 @@ class StatusTrack:
 
     def _create_indicator_dot(
         self, driver_name: str, hex_color: str, idx: int
-    ) -> bpy.types.Object:
+    ) -> Object:
         # Create a circle (disk) instead of a sphere using circle primitive
         # Create circle mesh and object directly without operators
         circle_mesh = bpy.data.meshes.new(f"IndicatorDot{driver_name}Mesh")
@@ -783,7 +783,7 @@ class StatusTrack:
             hex_to_blender_rgb(hex_color),
             f"IndicatorDotMat{driver_name}",
             0.0,
-            1.0,
+            0.7,
             1.0,
         )
         dot.data.materials.append(dot_mat)  # pyright: ignore
@@ -800,7 +800,7 @@ class StatusTrack:
         bm_border.free()
 
         border_mat = create_material(
-            (1, 1, 1), f"IndicatorBorderMat{driver_name}", 0.0, 1.0, 1.0
+            (1, 1, 1), f"IndicatorBorderMat{driver_name}", 0.0, 0.7, 1.0
         )
         border.data.materials.append(border_mat)  # pyright: ignore
 

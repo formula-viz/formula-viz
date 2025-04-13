@@ -4,6 +4,7 @@ import math
 import os
 
 import bpy
+from bpy.types import Object
 from mathutils import Vector
 
 from src.models.config import Config
@@ -14,7 +15,7 @@ from src.utils.logger import log_err, log_info
 class Outro:
     """Add social media links and other outro elements at the end of the video."""
 
-    def __init__(self, config: Config, camera_obj: bpy.types.Object, num_frames: int):
+    def __init__(self, config: Config, camera_obj: Object, num_frames: int):
         """Add social media links and other outro elements at the end of the video."""
         log_info("Initializing Outro...")
         self.config = config
@@ -272,9 +273,7 @@ class Outro:
         #     cur_loc, str(YOUTUBE_ICON_PATH), "youtube.com/formula-viz", "youtube"
         # )
 
-    def _parent_to_camera(
-        self, camera_obj: bpy.types.Object, element_obj: bpy.types.Object
-    ) -> None:
+    def _parent_to_camera(self, camera_obj: Object, element_obj: Object) -> None:
         """Parent the outro element to the camera."""
         element_obj.parent = camera_obj
         end_buffer = self.config["render"]["end_buffer_frames"]

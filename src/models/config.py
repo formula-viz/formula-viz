@@ -10,6 +10,7 @@ class DevelopmentConfig(TypedDict):
     quick_textures_mode: bool
     limited_frames_mode: bool
     thumbnail_mode: bool
+    skip_render: bool
 
 
 class RenderConfig(TypedDict):
@@ -74,6 +75,7 @@ class Config(TypedDict):
     year: int
     session: str  # Q or SQ, for Qualifying or Sprint Qualifying
     type: Literal["head-to-head", "rest-of-field"]
+    sort_section: Literal["standard", "historical", "recap"]
     mixed_mode: MixedConfig
     dev_settings: DevelopmentConfig
     render: RenderConfig

@@ -18,8 +18,10 @@ def add_frame_counter(
     """Add a frame counter that increments every frame in the VSE using individual text strips.
 
     Args:
+        config: Configuration settings for rendering
+        sped_point_df_with_times: DataFrame containing frame data with time information
+        focused_driver_total_time: Total lap time of the focused driver
         start_frame: First frame to start counting from
-        end_frame: Last frame (defaults to scene end frame if None)
         channel: VSE channel to place the counter
         position: Counter position ('TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT', 'CENTER')
 
@@ -39,7 +41,8 @@ def add_frame_counter(
     total_seconds = focused_driver_total_time.total_seconds()
     total_minutes = int(total_seconds // 60)
     remaining_seconds = total_seconds % 60
-    total_time_str = f"{total_minutes}:{remaining_seconds:06.3f}"
+    # Store formatted time string for potential future use
+    formatted_time = f"{total_minutes}:{remaining_seconds:06.3f}"
 
     is_before = True
     for i, row in enumerate(sped_point_df_with_times.itertuples()):
@@ -82,7 +85,13 @@ def add_frame_counter(
         # Convert frame to seconds and format as 0:00.000
         # Check if row.Time is NaN
 
-        if isinstance(row.Time, float) and (math.isnan(row.Time) or np.isnan(row.Time)):
+        if hasattr(row, "Time") and (
+            isinstance(getattr(row, "Time"), float)
+            and (
+                math.isnan(float(getattr(row, "Time")))
+                or np.isnan(float(getattr(row, "Time")))
+            )
+        ):
             if not is_before:
                 text_strip.text = ""
             else:
@@ -91,7 +100,7 @@ def add_frame_counter(
         elif frame <= config["render"]["start_buffer_frames"]:
             text_strip.text = "0:00.000"
         else:
-            time_float = float(row.Time)
+            time_float = float(getattr(row, "Time"))
             minutes = int(time_float // 60)
             remaining_seconds = time_float % 60
             text_strip.text = f"{minutes}:{remaining_seconds:06.3f}"

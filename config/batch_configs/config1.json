@@ -1,11 +1,12 @@
 {
-  "track": "JAPAN",
+  "track": "BAHRAIN",
   "year": 2025,
   "type": "head-to-head",
+  "sort_section": "standard",
   "session": "Q",
-  "drivers": ["Verstappen", "Perez"],
+  "drivers": ["Gasly", "Norris"],
   "mixed_mode": {
-    "enabled": true,
+    "enabled": false,
     "title": "How Verstappen beat Vettel's 2019 Suzuka Lap Record #f1",
     "drivers": [
       { "name": "Verstappen", "year": 2025, "session": "Q" },
@@ -16,7 +17,8 @@
     "ui_mode": false,
     "thumbnail_mode": false,
     "quick_textures_mode": false,
-    "limited_frames_mode": false
+    "limited_frames_mode": false,
+    "skip_render": false
   },
   "render": {
     "engine": "eevee",
@@ -35,9 +37,9 @@
   },
   "socials": {
     "youtube": {
-      "title": "How Verstappen beat Vettel's 2019 Suzuka Lap Record #f1",
+      "title": "How Gasly beat Norris in an Alpine, Bahrain 2025 Quali #f1",
       "service_account_path": "formula-viz-981f62016605.json",
-      "visibility": "public",
+      "visibility": "unlisted",
       "publish_at": null
     }
   }

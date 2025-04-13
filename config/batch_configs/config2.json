@@ -1,12 +1,13 @@
 {
-  "track": "JAPAN",
+  "track": "BAHRAIN",
   "year": 2025,
-  "type": "rest-of-field",
+  "type": "head-to-head",
+  "sort_section": "standard",
   "session": "Q",
-  "drivers": ["Verstappen"],
+  "drivers": ["Leclerc", "Hamilton"],
   "mixed_mode": {
     "enabled": false,
-    "title": "How much faster was 2019 f1 compared to 2024? Japan Qualifying: Vettel 2019 vs Verstappen 2024",
+    "title": "How Verstappen beat Vettel's 2019 Suzuka Lap Record #f1",
     "drivers": [
       { "name": "Verstappen", "year": 2025, "session": "Q" },
       { "name": "Vettel", "year": 2019, "session": "Q" }
@@ -16,14 +17,15 @@
     "ui_mode": false,
     "thumbnail_mode": false,
     "quick_textures_mode": false,
-    "limited_frames_mode": false
+    "limited_frames_mode": false,
+    "skip_render": false
   },
   "render": {
     "engine": "eevee",
     "fps": 30,
     "samples": 32,
     "is_both_mode": true,
-    "is_shorts_output": true,
+    "is_shorts_output": false,
     "output": "render-output.mp4",
     "start_buffer_frames": 15,
     "end_buffer_frames": 55,
@@ -35,7 +37,7 @@
   },
   "socials": {
     "youtube": {
-      "title": "Verstappen vs All Ghost Cars at Suzuka Quali 2025 #f1",
+      "title": "Why Hamilton was slower than Leclerc, Bahrain 2025 Quali #f1",
       "service_account_path": "formula-viz-981f62016605.json",
       "visibility": "unlisted",
       "publish_at": null

@@ -39,17 +39,24 @@ def edit_video(config: Config, app_state: AppState):
 
     log_info("Successfully switched to Blender video edit mode")
 
-    log_info("Processing thumbnails first...")
-    process_thumbnails.process_thumbnails(config, app_state)
-    if config["dev_settings"]["ui_mode"] and config["dev_settings"]["thumbnail_mode"]:
-        return
+    if not config["render"]["is_shorts_output"]:
+        log_info("Processing thumbnails first...")
+        process_thumbnails.process_thumbnails(config, app_state)
+        if (
+            config["dev_settings"]["ui_mode"]
+            and config["dev_settings"]["thumbnail_mode"]
+        ):
+            return
 
-    if bpy.context.scene.sequence_editor:
-        for sequence in bpy.context.scene.sequence_editor.sequences_all:
-            bpy.context.scene.sequence_editor.sequences.remove(sequence)
-    else:
-        bpy.context.scene.sequence_editor_create()
-    log_info("Done processing thumbnails")
+        if bpy.context.scene.sequence_editor:
+            for sequence in bpy.context.scene.sequence_editor.sequences_all:
+                bpy.context.scene.sequence_editor.sequences.remove(sequence)
+        else:
+            bpy.context.scene.sequence_editor_create()
+        log_info("Done processing thumbnails")
+
+        if config["dev_settings"]["thumbnail_mode"]:
+            return
 
     # Set frames per second based on config
     bpy.context.scene.render.fps = config["render"]["fps"]

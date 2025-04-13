@@ -1,6 +1,7 @@
 """Add a live leaderboard to the scene."""
 
 import bpy
+from bpy.types import Object
 from mathutils import Vector
 
 from src.models.config import Config
@@ -19,7 +20,7 @@ class LiveLeaderboard:
         drivers_and_colors: list[tuple[Driver, str]],
         car_rankings: list[list[tuple[Driver, float]]],
         is_fancy_mode: bool,
-        camera_obj: bpy.types.Object,
+        camera_obj: Object,
     ):
         """Create the live leaderboard.
 

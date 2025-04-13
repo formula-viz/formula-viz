@@ -32,13 +32,11 @@ def extract_track_edges():
     ]
 
     # Validate that inner and outer vertices form pairs along the track
-    print("\nValidating vertex pairs...")
     for i, (inner, outer) in enumerate(zip(inner_vertices, outer_vertices)):
         # Calculate the distance between corresponding inner and outer points
         inner_vec = mesh.vertices[i].co
         outer_vec = mesh.vertices[i + half_count].co
         distance = (inner_vec - outer_vec).length
-        print(f"Pair {i}: Inner={inner}, Outer={outer}, Distance={distance:.2f}")
 
     return inner_vertices, outer_vertices
 

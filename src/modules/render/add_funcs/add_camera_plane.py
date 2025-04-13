@@ -3,11 +3,12 @@
 import math
 
 import bpy
+from bpy.types import Object
 
 from src.models.config import Config
 
 
-def add_camera_plane(config: Config, camera_obj: bpy.types.Object):
+def add_camera_plane(config: Config, camera_obj: Object):
     """Add a gradient plane to the scene."""
     # Create a new mesh for the plane
     mesh = bpy.data.meshes.new("GradientPlaneMesh")

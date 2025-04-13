@@ -64,7 +64,7 @@ def get_rest_of_field_colors(driver: Driver):
 def get_head_to_head_colors(drivers: list[Driver]):
     def rgb_to_lab(rgb: tuple[float, float, float]) -> LabColor:
         srgb = sRGBColor(*rgb, is_upscaled=True)
-        return convert_color(srgb, LabColor)
+        return cast(LabColor, convert_color(srgb, LabColor))
 
     def color_difference(hex1: str, hex2: str) -> float:
         rgb1 = hex_to_normal_rgb(hex1)

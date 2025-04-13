@@ -123,7 +123,7 @@ def set_fast_forward_frames(
     should_skip_point = _apply_basis_points(is_skip_zone)
 
     for driver, driver_df in driver_dfs.items():
-        for i, row in driver_df.iterrows():
+        for i, row in enumerate(driver_df.iterrows()):
             if i not in should_skip_point:
                 driver_df.at[i, "FastForward"] = False
             else:

@@ -11,13 +11,9 @@ from src.models.config import Config
 def render_main(config: Config, app_state: AppState):
     ui_mode = config["dev_settings"]["ui_mode"]
 
-    app_state.render_output_path = (
-        app_state.project_root / "assets" / "dev" / "render-output.mp4"
-    )
-
     try:
-        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as app_state_file:
-            app_state_path = app_state_file.name
+        app_state_path = "output/app_state.pkl"
+        with open(app_state_path, "wb") as app_state_file:
             pickle.dump(app_state, app_state_file)
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as config_file:

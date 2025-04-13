@@ -13,7 +13,6 @@ from src.modules.render.add_funcs import (
     add_driver_objects,
     add_formula_viz_car,
     add_light,
-    add_sky_texture,
     add_status_track,
     add_track,
     add_track_idx_line,
@@ -83,7 +82,11 @@ class AbstractRenderer(ABC):
             0
         ].default_value = (0.045, 0.046, 0.051, 1)  # pyright: ignore
         # add_snow_background.add_snow_background()
-        add_sky_texture.add_sky_texture()
+        with bpy.data.libraries.load(
+            str(file_utils.project_paths.BLENDER_DIR / "materials.blend")
+        ) as (data_from, data_to):
+            data_to.worlds = ["NightSkyAndStars"]
+        bpy.context.scene.world = bpy.data.worlds["NightSkyAndStars"]
 
     def trigger_render(self):
         """Start the rendering process.
@@ -105,17 +108,16 @@ class AbstractRenderer(ABC):
         load_data = self.state.load_data
         assert load_data is not None
 
-        add_track.main(load_data.track_data, load_data.sectors_info)
+        track_data = load_data.track_data
 
-        # add_track_idx_line.main(
-        #     load_data.track_data.inner_curb_points,
-        #     load_data.track_data.outer_curb_points,
-        #     load_data.start_finish_line_idx,
-        #     "StartFinishLine",
-        # )
+        add_track.main(track_data, load_data.sectors_info)
+
+        assert track_data.inner_curb_points is not None
+        assert track_data.outer_curb_points is not None
+
         add_track_idx_line.add_track_idx_line(
-            load_data.track_data.inner_curb_points,
-            load_data.track_data.outer_curb_points,
+            track_data.inner_curb_points,
+            track_data.outer_curb_points,
             load_data.start_finish_line_idx,
             "Sector3LineEnd",
             3,
@@ -146,9 +148,16 @@ class AbstractRenderer(ABC):
         """
         self.setup_world()
         # add_background_grid.main()
-        gen_thumbnails.gen_thumbnails(self.config, self.state)
-        if self.config["dev_settings"]["thumbnail_mode"]:
-            return
+
+        # only generate thumbnail for long form / landscape videos
+        # also, if its ui mode, only run if its thumbnail mode
+        if not self.config["render"]["is_shorts_output"] and (
+            not self.config["dev_settings"]["ui_mode"]
+            or self.config["dev_settings"]["thumbnail_mode"]
+        ):
+            gen_thumbnails.gen_thumbnails(self.config, self.state)
+            if self.config["dev_settings"]["thumbnail_mode"]:
+                return
 
         if self.config["render"]["auto_track_mode"]:
             self.setup_world()

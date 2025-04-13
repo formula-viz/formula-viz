@@ -4,14 +4,13 @@ import os
 from typing import Optional
 
 import bpy
+from bpy.types import Object
 
 from src.models.config import Config
 from src.utils.logger import log_info
 
 
-def add_flag(
-    config: Config, camera_obj: Optional[bpy.types.Object] = None, scale: float = 0.05
-):
+def add_flag(config: Config, camera_obj: Optional[Object] = None, scale: float = 0.05):
     """Add a country flag corresponding to the current track.
 
     Returns:

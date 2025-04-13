@@ -55,7 +55,7 @@ def add_background_music(
 
     # Calculate fade out frames
     fps = scene.render.fps
-    fade_out_frames = int(fade_out_seconds * fps)
+    fade_out_frames = int(fade_out_seconds * fps)  # pyright: ignore
     fade_start_frame = scene_end_frame - fade_out_frames
 
     # Set keyframes for fade out

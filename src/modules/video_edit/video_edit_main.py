@@ -10,8 +10,8 @@ from src.models.config import Config
 
 def video_edit_main(config: Config, app_state: AppState):
     try:
-        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as app_state_file:
-            app_state_path = app_state_file.name
+        app_state_path = "output/app_state.pkl"
+        with open(app_state_path, "wb") as app_state_file:
             pickle.dump(app_state, app_state_file)
 
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as config_file:

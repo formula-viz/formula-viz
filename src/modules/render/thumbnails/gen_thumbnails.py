@@ -23,8 +23,12 @@ def gen_thumbnails(config: Config, state: AppState):
     log_info("Generating thumbnails...")
     start_time = time.time()
 
-    car_side_thumbnail = CarSideThumbnail(config, state)
+    car_side_thumbnail = CarSideThumbnail(
+        config, state, "output/car-side-thumbnail-raw.png"
+    )
     clear_scene()
-    two_car_thumbnail = TwoCarThumbnail(config, state)
+    two_car_thumbnail = TwoCarThumbnail(
+        config, state, "output/two-car-thumbnail-raw.png"
+    )
 
     log_info(f"Thumbnails generated in {time.time() - start_time:.2f} seconds")

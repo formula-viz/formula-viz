@@ -2,6 +2,7 @@
 
 import bmesh
 import bpy
+from bpy.types import Object
 
 from src.utils.colors import hex_to_blender_rgb
 from src.utils.materials import create_asphalt_material
@@ -14,7 +15,7 @@ def add_track_idx_line(
     name: str,
     line_width: int = 3,
     color: str = "#000000",
-) -> bpy.types.Object:
+) -> Object:
     """Create a start/finish line between inner and outer track points.
 
     Uses the index of inner_points and outer_points that defines the start/finish line

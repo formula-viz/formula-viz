@@ -6,12 +6,13 @@ import time
 from typing import Optional
 
 import bpy
+from bpy.types import Material, Object
 
 from src.utils import file_utils
 from src.utils.logger import log_info
 
 
-def import_car_collections(animated_color_mat: Optional[bpy.types.Material]):
+def import_car_collections(animated_color_mat: Optional[Material]):
     """Import car collections from the external blend file."""
     with bpy.data.libraries.load(
         str(file_utils.project_paths.FORMULA_VIZ_CAR_PATH)
@@ -53,9 +54,7 @@ def import_car_collections(animated_color_mat: Optional[bpy.types.Material]):
     return car_obj
 
 
-def create_parent_empty(
-    camera_obj: bpy.types.Object, is_shorts_output: bool
-) -> bpy.types.Object:
+def create_parent_empty(camera_obj: Object, is_shorts_output: bool) -> Object:
     """Create an empty parent object for positioning."""
     if is_shorts_output:
         location = (-0.15, 0.28, -1)
@@ -71,12 +70,13 @@ def create_parent_empty(
     empty_parent.hide_render = True
 
     empty_parent.scale = scale
+    empty_parent.location = location
 
     empty_parent.parent = camera_obj
     return empty_parent
 
 
-def create_text_object(animated_color_mat: bpy.types.Material):
+def create_text_object(animated_color_mat: Material):
     """Create and configure text object for the scene."""
     # Create a text curve data object
     text_data = bpy.data.curves.new(name="FormulaVizText", type="FONT")
@@ -96,7 +96,7 @@ def create_text_object(animated_color_mat: bpy.types.Material):
     return text_obj
 
 
-def setup_car_animation(car_obj: bpy.types.Object, is_shorts_output: bool):
+def setup_car_animation(car_obj: Object, is_shorts_output: bool):
     """Set up rotation animation for the car with continuous back-and-forth motion."""
     start_y_rotation = math.radians(21)
     middle_y_rotation = math.radians(-15)
@@ -148,7 +148,7 @@ def setup_car_animation(car_obj: bpy.types.Object, is_shorts_output: bool):
     car_obj.rotation_euler = (x_rot, start_y_rotation, 0)
 
 
-def create_animated_color() -> bpy.types.Material:
+def create_animated_color() -> Material:
     """Create an animated material with color cycling."""
     material = bpy.data.materials.new(name="AnimatedColorMaterial")
     material.use_nodes = True
@@ -185,7 +185,7 @@ def create_animated_color() -> bpy.types.Material:
     return material
 
 
-def main(camera_obj: bpy.types.Object, is_shorts_output: bool):
+def main(camera_obj: Object, is_shorts_output: bool):
     """Import formula-viz car from blend file and position it in front of the camera.
 
     Args:
