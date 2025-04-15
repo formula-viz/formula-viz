@@ -110,7 +110,7 @@ class AbstractRenderer(ABC):
 
         track_data = load_data.track_data
 
-        add_track.main(track_data, load_data.sectors_info)
+        add_track.main(track_data, load_data.sectors_info, self.config["track"])
 
         assert track_data.inner_curb_points is not None
         assert track_data.outer_curb_points is not None

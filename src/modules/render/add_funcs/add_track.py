@@ -515,7 +515,9 @@ def create_planes(
     return obj
 
 
-def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
+def main(
+    track_data: TrackData, sectors_info: Optional[SectorsInfo], track_name: str = ""
+) -> None:
     """Create the complete track with main surfaces and curbs.
 
     Args:
@@ -542,7 +544,10 @@ def main(track_data: TrackData, sectors_info: Optional[SectorsInfo]) -> None:
     # curbstone_b_mat = create_material((0.128, 0, 0), "CurbstoneB")
 
     curbstone_a_mat = create_asphalt_material(white_color, "CurbstoneA")
-    curbstone_b_mat = create_asphalt_material(red_color, "CurbstoneB")
+    if track_name == "SAUDI":
+        curbstone_b_mat = create_asphalt_material((0, 0.08, 0), "CurbstoneB")
+    else:
+        curbstone_b_mat = create_asphalt_material(red_color, "CurbstoneB")
     line_mat = create_asphalt_material((0.5, 0.5, 0.5), "Line")
 
     # # Load the asphalt material from external blend file

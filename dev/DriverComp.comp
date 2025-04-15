@@ -1,0 +1,973 @@
+Composition {
+	CurrentTime = 0,
+	RenderRange = { 0, 119 },
+	GlobalRange = { 0, 119 },
+	CurrentID = 98,
+	HiQ = true,
+	PlaybackUpdateMode = 0,
+	StereoMode = false,
+	Version = "DaVinci Resolve 20.0.0b.0023",
+	SavedOutputs = 0,
+	HeldTools = 0,
+	DisabledTools = 0,
+	LockedTools = 0,
+	AudioOffset = 0,
+	Resumable = true,
+	OutputClips = {
+	},
+	CustomData = { TEMPLATE_ID = "Fusion Generator" },
+	Tools = {
+		Throttle3 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR3",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 954.667, -231.424 } },
+		},
+		TR8 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.65, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 960.667, -203.879 } },
+		},
+		Merge6 = Merge {
+			Inputs = {
+				Background = Input {
+					SourceOp = "Background2",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Text1",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 472.667, -39.3031 } },
+		},
+		Throttle4 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR4",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1049.33, -229.939 } },
+		},
+		Throttle8 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR8",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 960.667, -172.364 } },
+		},
+		Background2 = Background {
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "Rectangle1",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.101960784313725, },
+				TopLeftGreen = Input { Value = 0.101960784313725, },
+				TopLeftBlue = Input { Value = 0.101960784313725, },
+				TopLeftAlpha = Input { Value = 0.732, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 366.667, -39.9091 } },
+		},
+		Throttle9 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR9",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1051.33, -173.303 } },
+		},
+		Throttle5 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR5",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1140.67, -230.273 } },
+		},
+		Merge2 = Merge {
+			Inputs = {
+				Background = Input {
+					SourceOp = "Merge6",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Merge4",
+					Source = "Output",
+				},
+				Center = Input { Value = { 0.5, 0.538 }, },
+				Size = Input { Value = 0.48, },
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 577.334, -37.4848 } },
+		},
+		Background4 = Background {
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "Ellipse3",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 1, },
+				TopLeftGreen = Input { Value = 1, },
+				TopLeftBlue = Input { Value = 1, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 577.333, -149.606 } },
+		},
+		Throttle2 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR2",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 860, -232.636 } },
+		},
+		MediaIn2 = Loader {
+			CustomData = { MEDIA_ID = "a20f82a0-227c-4f01-8916-e49d743df296", MediaProps = { MEDIA_NUM_LAYERS = 0, MEDIA_FORMAT_TYPE = "PNG", MEDIA_PATH = "/home/quinn-caverly/Projects/formula-viz/assets/images/driver-headshots/TSU-RedBullRacing-2025.png", MEDIA_LAYER_DESC = {
+					}, MEDIA_NAME = "TSU-RedBullRacing-2025.png", MEDIA_HEIGHT = 840, MEDIA_START_FRAME = 0, MEDIA_IS_SOURCE_RES = true, MEDIA_SRC_FRAME_RATE = 24, MEDIA_MARK_OUT = 0, MEDIA_WIDTH = 840, MEDIA_NUM_FRAMES = 1, MEDIA_MARK_IN = 0, MEDIA_PAR = 1 }, },
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "Ellipse1",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				MediaSource = Input { Value = FuID { "MediaPool" }, },
+				MediaID = Input { Value = "a20f82a0-227c-4f01-8916-e49d743df296", },
+				AudioTrack = Input { Value = FuID { }, },
+				Layer = Input {
+					Value = Text {
+					},
+				},
+				ClipTimeEnd = Input { Value = 0, },
+				Loop = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				DeepOutputMode = Input {
+					Value = 0,
+					Disabled = true,
+				},
+			},
+			ViewInfo = OperatorInfo { Pos = { 476, -76.2727 } },
+			Version = 1,
+			Clips = {
+				Clip {
+					ID = "Clip1",
+					Multiframe = true,
+					Filename = "/home/quinn-caverly/Projects/formula-viz/assets/images/driver-headshots/TSU-RedBullRacing-2025.png",
+					Length = 1,
+					LengthSetManually = true,
+					GlobalEnd = 119,
+					TrimOut = 0,
+					Loop = 0
+				}
+			}
+		},
+		MediaOut1 = Saver {
+			Inputs = {
+				Index = Input { Value = "0", },
+				Input = Input {
+					SourceOp = "Merge1",
+					Source = "Output",
+				}
+			},
+			ViewInfo = OperatorInfo { Pos = { 1108.67, 41.6212 } },
+		},
+		Merge1 = Merge {
+			CtrlWZoom = false,
+			Inputs = {
+				Background = Input {
+					SourceOp = "Background1",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Merge5",
+					Source = "Output",
+				},
+				Center = Input { Value = { 0.12, 0.271 }, },
+				Size = Input { Value = 0.78, },
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 578, 41.9091 } },
+		},
+		Merge5 = Merge {
+			Inputs = {
+				Background = Input {
+					SourceOp = "Merge2",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "MultiMerge1",
+					Source = "Output",
+				},
+				Center = Input { Value = { 0.458, 0.281 }, },
+				Size = Input { Value = 0.28, },
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 576.667, -2.93936 } },
+		},
+		Ellipse2 = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.416, },
+				Height = Input { Value = 0.414, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 372.667, -118.697 } },
+		},
+		MultiMerge1 = MultiMerge {
+			CtrlWZoom = false,
+			Inputs = {
+				LayerOrder = Input { Value = ScriptVal { { [0] = 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 } }, },
+				Background = Input {
+					SourceOp = "Throttle1",
+					Source = "Output",
+				},
+				["Layer1.Foreground"] = Input {
+					SourceOp = "Throttle3",
+					Source = "Output",
+				},
+				["Layer1.Center"] = Input { Value = { 0.498, 0.5 }, },
+				LayerName1 = Input { Value = "Rectangle2 Layer", },
+				["Layer2.Foreground"] = Input {
+					SourceOp = "Throttle2",
+					Source = "Output",
+				},
+				LayerName2 = Input { Value = "Background7 Layer", },
+				["Layer3.Foreground"] = Input {
+					SourceOp = "Throttle4",
+					Source = "Output",
+				},
+				LayerName3 = Input { Value = "Background5 Layer", },
+				["Layer4.Foreground"] = Input {
+					SourceOp = "Throttle5",
+					Source = "Output",
+				},
+				LayerName4 = Input { Value = "Background5_1_1 Layer", },
+				["Layer5.Foreground"] = Input {
+					SourceOp = "Throttle6",
+					Source = "Output",
+				},
+				LayerName5 = Input { Value = "Background5_1_1_1 Layer", },
+				["Layer6.Foreground"] = Input {
+					SourceOp = "Throttle7",
+					Source = "Output",
+				},
+				LayerName6 = Input { Value = "Throttle7 Layer", },
+				["Layer7.Foreground"] = Input {
+					SourceOp = "Throttle8",
+					Source = "Output",
+				},
+				LayerName7 = Input { Value = "Throttle8 Layer", },
+				["Layer8.Foreground"] = Input {
+					SourceOp = "Throttle9",
+					Source = "Output",
+				},
+				LayerName8 = Input { Value = "Throttle8_1 Layer", },
+				["Layer9.Foreground"] = Input {
+					SourceOp = "Throttle10",
+					Source = "Output",
+				},
+				LayerName9 = Input { Value = "Throttle8_2 Layer", },
+				["Layer10.Foreground"] = Input {
+					SourceOp = "DRS",
+					Source = "Output",
+				},
+				LayerName10 = Input { Value = "Text2 Layer", }
+			},
+			ViewInfo = OperatorInfo { Pos = { 804.667, -82.9394 } },
+		},
+		DRS = TextPlus {
+			NameSet = true,
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				LayoutRotation = Input { Value = 1, },
+				CharacterOffset = Input { Value = { 0.415, 0 }, },
+				TransformRotation = Input { Value = 1, },
+				Red1 = Input { Value = 0.525490196078431, },
+				Green1 = Input { Value = 0.525490196078431, },
+				Blue1 = Input { Value = 0.525490196078431, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "DRS", },
+				Font = Input { Value = "Open Sans", },
+				Style = Input { Value = "Extrabold", },
+				Size = Input { Value = 0.1693, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 922.667, -81.7275 } },
+		},
+		Merge4 = Merge {
+			Inputs = {
+				Background = Input {
+					SourceOp = "Merge3",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "MediaIn2",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 577.333, -75.0606 } },
+		},
+		Ellipse1 = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.95, },
+				Height = Input { Value = 0.95, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 368.667, -76.2727 } },
+		},
+		TR3 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.4, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 955.334, -262.939 } },
+		},
+		Text1 = TextPlus {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				Wrap = Input { Value = 1, },
+				LayoutRotation = Input { Value = 1, },
+				CharacterOffset = Input { Value = { -0.116, 0.138 }, },
+				TransformRotation = Input { Value = 1, },
+				Softness1 = Input { Value = 1, },
+				StyledText = Input { Value = "P12", },
+				Font = Input { Value = "Open Sans", },
+				Style = Input { Value = "Extrabold Italic", },
+				Size = Input { Value = 0.122, },
+				VerticalJustificationNew = Input { Value = 3, },
+				HorizontalLeftCenterRight = Input { Value = -1, },
+				HorizontalJustificationNew = Input { Value = 3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 473.334, -5.36357 } },
+		},
+		TR7 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.6, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 869.333, -203.545 } },
+		},
+		Background1 = Background {
+			Inputs = {
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.635294117647059, },
+				TopLeftGreen = Input { Value = 0.615686274509804, },
+				TopLeftBlue = Input { Value = 0.67843137254902, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 471.333, 41.303 } },
+		},
+		Throttle6 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR6",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 771.334, -171.212 } },
+		},
+		TR2 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.35, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 861.334, -262.333 } },
+		},
+		Throttle7 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR7",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 869.333, -172.03 } },
+		},
+		TR6 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.55, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 771.33, -202.727 } },
+		},
+		Merge3 = Merge {
+			Inputs = {
+				Background = Input {
+					SourceOp = "Background4",
+					Source = "Output",
+				},
+				Foreground = Input {
+					SourceOp = "Background3",
+					Source = "Output",
+				},
+				PerformDepthMerge = Input { Value = 0, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 577.333, -117.485 } },
+		},
+		Background3 = Background {
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "Ellipse2",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.76078431372549, },
+				TopLeftGreen = Input { Value = 0.76078431372549, },
+				TopLeftBlue = Input { Value = 0.76078431372549, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 472.667, -118.091 } },
+		},
+		TR4 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.45, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1050, -262.667 } },
+		},
+		TR10 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.75, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1146, -205.758 } },
+		},
+		TR1 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.3, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 768, -262.939 } },
+		},
+		Throttle1 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR1",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 768, -232.636 } },
+		},
+		Throttle10 = Background {
+			NameSet = true,
+			Inputs = {
+				EffectMask = Input {
+					SourceOp = "TR10",
+					Source = "Mask",
+				},
+				GlobalOut = Input { Value = 119, },
+				Width = Input { Value = 1920, },
+				Height = Input { Value = 1080, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				["Gamut.SLogVersion"] = Input { Value = FuID { "SLog2" }, },
+				TopLeftRed = Input { Value = 0.176470588235294, },
+				TopLeftGreen = Input { Value = 0.176470588235294, },
+				TopLeftBlue = Input { Value = 0.176470588235294, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1147.33, -174.849 } },
+		},
+		Rectangle1 = RectangleMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				SoftEdge = Input { Value = 0.0047, },
+				BorderWidth = Input { Value = 0.054, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.213, },
+				Height = Input { Value = 0.535, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 259.333, -39.303 } },
+		},
+		TR5 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1142, -262.394 } },
+		},
+		TR9 = RectangleMask {
+			NameSet = true,
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				BorderWidth = Input { Value = 0.01, },
+				JoinStyle = Input { Value = 1, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Center = Input { Value = { 0.7, 0.5 }, },
+				Width = Input { Value = 0.03, },
+				Height = Input { Value = 0.3, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 1051.33, -204.818 } },
+		},
+		Ellipse3 = EllipseMask {
+			Inputs = {
+				Filter = Input { Value = FuID { "Fast Gaussian" }, },
+				MaskWidth = Input { Value = 1920, },
+				MaskHeight = Input { Value = 1080, },
+				PixelAspect = Input { Value = { 1, 1 }, },
+				UseFrameFormatSettings = Input { Value = 1, },
+				ClippingMode = Input { Value = FuID { "None" }, },
+				Width = Input { Value = 0.425, },
+				Height = Input { Value = 0.425, }
+			},
+			ViewInfo = OperatorInfo { Pos = { 577.333, -179.303 } },
+		}
+	},
+	Frames = {
+		{
+			FrameTypeID = "ChildFrame",
+			Mode = 3,
+			LayoutPreset = 0,
+			PresetName = "Default",
+			Left = 0,
+			Top = 0,
+			Width = 2494,
+			Height = 1289,
+			ZoneInfo = { AuxRight = { Expanded = true }, ["!Left"] = {
+				}, AuxLeft = { Expanded = true }, Right = { Expanded = true, }, Left = { Expanded = false, Adjust = false }, ["!Right"] = {
+				} },
+			ViewInfo = { Viewer1 = { Show = true, RatioX = 0.979913916786231, RatioY = 0.01, }, InnerLeft = { PixelX = 675, RatioY = 100, }, MainSplit = { RatioX = 100, RatioY = 0.689039489789345, }, CenterSplit = { RatioX = 1, RatioY = 100, }, Viewer2 = { Show = true, RatioX = 1.02008608321378, RatioY = 0.01, }, Comments = { Show = false }, Time = { Show = true, RatioX = 100, }, InnerColumns = { RatioX = 100, RatioY = 2.31096051021066, }, Keyframes = { Show = false, }, LayoutStrip = { Show = true, }, Inspector = { Show = true, RatioX = 100, RatioY = 1.000777000777, }, InnerRight = {
+				}, MediaPool = { Show = true, Adjust = false, RatioX = 1, RatioY = 100.176991150442, MRU = 1 }, OuterColumns = { RatioX = 100, RatioY = 1, }, Effects = { Show = false, }, ActionStrip = { Show = true, RatioX = 100, }, Metadata = { Show = false, }, OuterLeft = { PixelX = 648, RatioY = 100, }, ViewerSplit = { RatioX = 100, RatioY = 1, }, Nodes = { Show = true, RatioX = 1, RatioY = 100, }, OuterRight = { PixelX = 420, RatioY = 100, }, Clips = { Show = true, Adjust = false, RatioX = 100, MRU = 2 }, Spline = { Show = false, } },
+			Views = ordered() {
+				MediaPool = "MediaPoolView",
+				Effects = MultiView {
+					Active = "EffectView",
+					ViewList = ordered() {
+						EffectView = "EffectView"
+					},
+				},
+				Nodes = MultiView {
+					Active = "FlowView",
+					ViewList = ordered() {
+						FlowView = "FlowView"
+					},
+					FlowView = FlowView {
+						Flags = {
+							Navigator = true,
+							AutoHideNavigator = true,
+							AutoSnap = true,
+							RemoveRouters = true
+						},
+						NavigatorSize = { 200, 140 },
+						Direction = "Horizontal",
+						PipeStyle = "Direct",
+						RootScale = 1,
+						RootOffset = { -52, 153.848 }
+					}
+				},
+				Keyframes = MultiView {
+					Active = "TimelineView",
+					ViewList = ordered() {
+						TimelineView = "TimelineView"
+					},
+					TimelineView = TimelineView {
+						TreeControlState = {
+						},
+						DisplayMode = "All Tools",
+						ShowCurrentTimeTools = false,
+						Filter = "Show All",
+						ShowSelectedTools = false,
+						ShowAnimatedToolsOnly = false,
+						ShowEditBoxes = false,
+						KeyFrameView = {
+							Position = { Left = 232, Bottom = 347 },
+							ScaleX = 2.03703703703704,
+							OffsetX = -52.962962962963,
+							OffsetY = 0,
+							AutoScaling = "scroll",
+							AutoSnapTo = "frame",
+							AutoSnapToGuidelines = true,
+							GuidelinesGrabEnabled = true,
+							GuidelinesSnapTo = "none"
+						},
+						Spreadsheet = { LeftPos = 232, Visible = false }
+					}
+				},
+				Spline = MultiView {
+					Active = "SplineView",
+					ViewList = ordered() {
+						SplineView = "SplineEditorView"
+					},
+					SplineView = SplineEditorView {
+						LeftPos = 264,
+						ScaleX = 0.2,
+						ScaleY = 0.0031055900621118,
+						OffsetX = -3.6,
+						OffsetY = 0,
+						AutoScaling = "scroll",
+						AutoSnapTo = "frame",
+						AutoSnapToGuidelines = true,
+						GuidelinesSnapTo = "frame",
+						ShowKeyMarkers = false,
+						IndependentHandles = false,
+						ShowNonSplineModifiers = false,
+						GuidelinesGrabEnabled = true,
+						ShowOneToolOnly = false,
+						ShowSelectedTools = false,
+						ShowAllInputs = false,
+						Filter = "Show All"
+					}
+				},
+				Inspector = MultiView {
+					Active = "Tools",
+					ViewList = ordered() {
+						Tools = "ControlView",
+						Modifiers = "ModifierView"
+					},
+				},
+				Viewer1 = MultiView {
+					Active = "LeftView",
+					ViewList = ordered() {
+						LeftView = "PreviewContainer"
+					},
+				},
+				Viewer2 = MultiView {
+					Active = "RightView",
+					ViewList = ordered() {
+						RightView = "PreviewContainer"
+					},
+				},
+				Time = "TimeView",
+				ActionStrip = "ActionStripView",
+				LayoutStrip = "LayoutStripView",
+				Clips = "ClipsView",
+				Metadata = "MetadataView"
+			},
+			Layout = {
+				{ ID = "LayoutStrip", FixedY = 36, Resolve = false, Flat = true },
+				{
+					{
+						{ ID = "MediaPool", Fusion = false, RatioX = 1 },
+						{ ID = "Effects", RatioX = 1 },
+						Zone = "Left",
+						Rows = 2,
+						PaneID = "OuterLeft",
+						PixelX = 420
+					},
+					{
+						{
+							{
+								{ ID = "MediaPool", Fusion = false, RatioX = 1 },
+								{ ID = "Effects", RatioX = 1 },
+								PaneID = "InnerLeft",
+								MaxViews = 1,
+								PixelX = 420,
+								Rows = 2,
+								Zone = "!Left"
+							},
+							{
+								{
+									{ ID = "Viewer1", RatioY = 0.01, RatioX = 1 },
+									{ ID = "Viewer2", RatioX = 1 },
+									RatioY = 1,
+									Columns = 2,
+									PaneID = "ViewerSplit"
+								},
+								{ ID = "Time", FixedY = 83, Flat = true },
+								RatioX = 1,
+								Rows = 2
+							},
+							{
+								{ ID = "Inspector", RatioY = 1 },
+								{ ID = "Metadata", RatioY = 1, Fusion = false },
+								PaneID = "InnerRight",
+								MaxViews = 1,
+								PixelX = 420,
+								Rows = 2,
+								Zone = "!Right"
+							},
+							RatioY = 2,
+							Columns = 3,
+							PaneID = "InnerColumns"
+						},
+						{ ID = "ActionStrip", FixedY = 50, Flat = true },
+						{
+							{ ID = "Nodes", RatioX = 1 },
+							{ ID = "Spline", RatioX = 1 },
+							{ ID = "Keyframes", RatioX = 1 },
+							RatioY = 1,
+							Columns = 3,
+							PaneID = "MainSplit"
+						},
+						{ Fusion = false, ID = "Clips", LARGE_FixedY = 160, MEDIUM_FixedY = 138, SMALL_FixedY = 110 },
+						RatioX = 1,
+						Rows = 4,
+						PaneID = "CenterSplit"
+					},
+					{
+						{ ID = "Inspector", RatioY = 1 },
+						{ ID = "Metadata", RatioY = 1, Fusion = false },
+						Zone = "Right",
+						Rows = 2,
+						PaneID = "OuterRight",
+						PixelX = 420
+					},
+					RatioY = 1,
+					Columns = 3,
+					PaneID = "OuterColumns"
+				},
+				RatioX = 1,
+				Rows = 2,
+				RatioY = 1
+			},
+			TopBar = {
+				Left = { "Left", "MediaPool", "Effects", "Clips", "Nodes", "Console" },
+				Right = { "Spline", "Keyframes", "Metadata", "Inspector", "Right" }
+			}
+		}
+	},
+	Prefs = {
+		Comp = {
+			Interactive = {
+				Proxy = {
+					Scale = 1,
+				},
+			},
+			Views = {
+				RightView = {
+					Viewer = {
+					},
+				},
+				LeftView = {
+				},
+			},
+			Paths = {
+				Map = {
+					["ResolveCaches:"] = "/home/quinn-caverly/Videos/CacheClip/87b73b51-0f43-4808-aad5-8c5813d35ec8/MediaPool",
+				},
+			},
+			FrameFormat = {
+				Rate = 24,
+				DepthFull = 3,
+				DepthPreview = 3,
+				DepthInteractive = 3,
+			},
+			Unsorted = {
+				GlobalEnd = 119
+			},
+		}
+	},
+}
