@@ -148,10 +148,11 @@ def get_driver_classes(ff1_session: Session, year: int, session: str) -> list[Dr
         last_name = str(d["LastName"])
         headshot_url = str(d["HeadshotUrl"])
         team = str(d["TeamName"]).replace(" ", "")
+        position = int(d["Position"])
 
         driver_color = get_driver_style(abbrev, "color", ff1_session)["color"]
         driver_classes.append(
-            Driver(last_name, abbrev, headshot_url, year, session, team, driver_color)
+            Driver(last_name, abbrev, headshot_url, year, session, team, driver_color, position)
         )
 
     return driver_classes

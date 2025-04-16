@@ -33,10 +33,11 @@ class Driver:
     session: str
     team: str
     default_driver_color: str
+    position: int
 
     def __str__(self) -> str:
         """Return a string representation of the Driver."""
-        return f"{self.last_name} ({self.abbrev}, {self.year}, {self.session}, {self.team}, {self.default_driver_color})"
+        return f"{self.last_name} ({self.abbrev}, {self.year}, {self.session}, {self.team}, {self.default_driver_color}, {self.position})"
 
     def __hash__(self) -> int:
         """Return a hash value for the Driver."""
@@ -49,6 +50,7 @@ class Driver:
                 self.session,
                 self.team,
                 self.default_driver_color,
+                self.position
             )
         )
 

@@ -11,6 +11,7 @@ class DevelopmentConfig(TypedDict):
     limited_frames_mode: bool
     thumbnail_mode: bool
     skip_render: bool
+    skip_gimp: bool
 
 
 class RenderConfig(TypedDict):

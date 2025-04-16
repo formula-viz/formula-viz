@@ -9,6 +9,7 @@ from src.modules.load_data import load_data_main
 from src.modules.render.render_main import render_main
 from src.modules.socials_upload import socials_upload_main
 from src.modules.video_edit.video_edit_main import video_edit_main
+from src.modules.widgets.add_widgets_main import add_widgets_main
 from src.utils.logger import log_err, log_info
 
 
@@ -29,6 +30,10 @@ def run_for_config(config: Config, project_root: Path):
         if not config["dev_settings"]["skip_render"]:
             render_main(config, app_state)
             log_info("Rendering completed.")
+
+        if not config["dev_settings"]["skip_gimp"]:
+            add_widgets_main(config, app_state)
+            log_info("Added the widgets.")
 
         video_edit_main(config, app_state)
         log_info("Video editing completed.")
