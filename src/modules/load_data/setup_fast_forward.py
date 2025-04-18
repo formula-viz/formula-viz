@@ -60,16 +60,19 @@ def _find_initial_straights(
 def _filter_out_isolated_sections(is_on_straight: list[tuple[int, bool]]):
     is_skip_zone = []
     was_previous_straight = False
-    for idx, is_straight in is_on_straight:
+
+    for i, (idx, is_straight) in enumerate(is_on_straight):
         if is_straight and not was_previous_straight:
             num_in_group = 1
-            for j in range(idx + 1, len(is_on_straight)):
-                if is_on_straight[j][1]:
+            # Use list index (i), not frame index (idx)
+            for j in range(i + 1, len(is_on_straight)):
+                next_idx, next_straight = is_on_straight[j]
+                if next_straight:
                     num_in_group += 1
                 else:
                     break
 
-            if num_in_group >= 15:
+            if num_in_group >= 60:
                 is_skip_zone.append((idx, True))
                 was_previous_straight = True
             else:

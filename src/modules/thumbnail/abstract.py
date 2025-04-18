@@ -53,8 +53,7 @@ class ThumbnailAbstract(ABC):
             / f"render-{thumbnail_type.name}-{thumbnail_input.image_mode.name}.png"
         )
         self.final_output_path: str = str(
-            file_utils.project_paths.OUTPUT_DIR
-            / f"{thumbnail_type.name}-{thumbnail_input.image_mode.name}.png"
+            file_utils.project_paths.OUTPUT_DIR / "thumbnail.png"
         )
         self.thumbnail_type = thumbnail_type
         self.image_mode = thumbnail_input.image_mode

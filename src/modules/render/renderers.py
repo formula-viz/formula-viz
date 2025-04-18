@@ -19,7 +19,6 @@ from src.modules.render.add_funcs import (
 )
 
 # from src.modules.render.thumbnail.create_thumbnail import ThumbnailGenerator
-from src.modules.render.thumbnails import gen_thumbnails
 from src.utils import file_utils
 from src.utils.colors import (
     SECTOR_1_COLOR,
@@ -148,16 +147,6 @@ class AbstractRenderer(ABC):
         """
         self.setup_world()
         # add_background_grid.main()
-
-        # only generate thumbnail for long form / landscape videos
-        # also, if its ui mode, only run if its thumbnail mode
-        if not self.config["render"]["is_shorts_output"] and (
-            not self.config["dev_settings"]["ui_mode"]
-            or self.config["dev_settings"]["thumbnail_mode"]
-        ):
-            gen_thumbnails.gen_thumbnails(self.config, self.state)
-            if self.config["dev_settings"]["thumbnail_mode"]:
-                return
 
         if self.config["render"]["auto_track_mode"]:
             self.setup_world()
