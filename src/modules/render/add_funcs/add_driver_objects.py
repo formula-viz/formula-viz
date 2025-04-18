@@ -62,12 +62,15 @@ def scale_and_position_car(
     return (center_x, center_y, center_z)
 
 
-def create_car_obj(team_id: str, driver_last_name: str):
+def create_car_obj(team_id: str, driver_last_name: str, collection=None):
     """Create a base F1 car object that will be used as a template for this team."""
     # Create empty object to serve as parent
     empty_obj = bpy.data.objects.new(f"{driver_last_name}{team_id}Car", None)
     empty_obj.empty_display_type = "PLAIN_AXES"
-    bpy.context.collection.objects.link(empty_obj)
+    if collection:
+        collection.objects.link(empty_obj)
+    else:
+        bpy.context.collection.objects.link(empty_obj)
     empty_obj.hide_viewport = True
     empty_obj.hide_render = True
 
@@ -80,7 +83,10 @@ def create_car_obj(team_id: str, driver_last_name: str):
     # First link all objects to scene to preserve relationships
     for obj in data_to.objects:
         if obj is not None:
-            bpy.context.scene.collection.objects.link(obj)
+            if collection:
+                collection.objects.link(obj)
+            else:
+                bpy.context.collection.objects.link(obj)
 
     # Now handle parenting after all objects exist in scene
     for obj in data_to.objects:

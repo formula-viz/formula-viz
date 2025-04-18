@@ -50,6 +50,8 @@ def run_for_config(config: Config, project_root: Path):
         config["render"]["is_shorts_output"] = True
         post_load_data(config)
         config["render"]["is_shorts_output"] = False
+        # skip gimp because it will be identical between shorts and landscape, saves time
+        config["dev_settings"]["skip_gimp"] = True
         post_load_data(config)
     else:
         post_load_data(config)

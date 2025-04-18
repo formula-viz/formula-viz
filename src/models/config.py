@@ -12,6 +12,7 @@ class DevelopmentConfig(TypedDict):
     thumbnail_mode: bool
     skip_render: bool
     skip_gimp: bool
+    skip_load: bool
 
 
 class RenderConfig(TypedDict):

@@ -1,12 +1,12 @@
-import os
-
 import json
-
+import os
 from dataclasses import dataclass
 
 import gi
+
 gi.require_version("Gimp", "3.0")
 from gi.repository import Gegl, Gimp, Gio
+
 
 @dataclass
 class DriverDashData:
@@ -28,10 +28,24 @@ def main(driver_dash_data_file):
     with open(driver_dash_data_file, "rb") as f:
         ddj = json.load(f)
 
-    driver_data = DriverDashData(ddj["img_file_path"], ddj["output_dir_path"], ddj["color"], ddj["position"], ddj["num_frames"], ddj["throttle"], ddj["is_brake"], ddj["is_drs"], ddj["sector_times"], ddj["sector_end_frames"], ddj["sector_delta_times"])
+    driver_data = DriverDashData(
+        ddj["img_file_path"],
+        ddj["output_dir_path"],
+        ddj["color"],
+        ddj["position"],
+        ddj["num_frames"],
+        ddj["throttle"],
+        ddj["is_brake"],
+        ddj["is_drs"],
+        ddj["sector_times"],
+        ddj["sector_end_frames"],
+        ddj["sector_delta_times"],
+    )
 
     # Create the driver widget once
-    create_driver_widget(driver_data.img_file_path, driver_data.color, driver_data.position)
+    create_driver_widget(
+        driver_data.img_file_path, driver_data.color, driver_data.position
+    )
 
     # Get the current image with the widget
     current_image = Gimp.get_images()[0]
@@ -53,9 +67,7 @@ def main(driver_dash_data_file):
             else 0
         )
         drs = (
-            driver_data.is_drs[frame_num]
-            if frame_num < len(driver_data.is_drs)
-            else 0
+            driver_data.is_drs[frame_num] if frame_num < len(driver_data.is_drs) else 0
         )
         is_brake = (
             driver_data.is_brake[frame_num]
@@ -64,12 +76,14 @@ def main(driver_dash_data_file):
         )
 
         if not is_brake:
-            throttle_layer = add_throttle_indicator(temp_image, throttle_value, Gegl.Color.new("rgb(0.0, 0.4, 0.0)"))
+            add_throttle_indicator(
+                temp_image, throttle_value, Gegl.Color.new("rgb(0.0, 0.4, 0.0)")
+            )
         else:
-            throttle_layer = add_throttle_indicator(temp_image, 1, Gegl.Color.new("rgb(0.4, 0.0, 0.0)"))
+            add_throttle_indicator(temp_image, 1, Gegl.Color.new("rgb(0.4, 0.0, 0.0)"))
 
         if drs in [10, 12, 14]:
-            drs_indicator = add_drs_indicator(temp_image)
+            add_drs_indicator(temp_image)
 
         sector_x_offset = 235
 
@@ -81,46 +95,92 @@ def main(driver_dash_data_file):
         if frame_num >= driver_data.sector_end_frames[0]:
             sector_delta = driver_data.sector_delta_times[0]
             if sector_delta != "0:00.000":
-                s1_background = add_sector_background(temp_image, 183, 786, red_color, "S1")
-                s1_time = add_sector_text(temp_image, 160, 922, "#ffffff", f"+{sector_delta[3:]}", 40)
+                add_sector_background(temp_image, 183, 786, red_color, "S1")
+                add_sector_text(
+                    temp_image, 182, 922, "#ffffff", f"+{sector_delta[3:]}", 40
+                )
             else:
-                s1_background = add_sector_background(temp_image, 183, 786, green_color, "S1")
-                s1_time = add_sector_text(temp_image, 160, 922, "#ffffff", driver_data.sector_times[0], 40)
+                add_sector_background(temp_image, 183, 786, green_color, "S1")
+                add_sector_text(
+                    temp_image, 182, 922, "#ffffff", driver_data.sector_times[0][2:], 40
+                )
         else:
-            s1_background = add_sector_background(temp_image, 183, 786, gray_color, "S1")
-        s1_text = add_sector_text(temp_image, 224, 809, "#ffffff", "S1", 50)
+            add_sector_background(temp_image, 183, 786, gray_color, "S1")
+        add_sector_text(temp_image, 224, 809, "#ffffff", "S1", 50)
 
         # Sector 2
         if frame_num >= driver_data.sector_end_frames[1]:
             sector_delta = driver_data.sector_delta_times[1]
             if sector_delta != "0:00.000":
-                s2_background = add_sector_background(temp_image, 183+sector_x_offset, 786, red_color, "S2")
-                s2_time = add_sector_text(temp_image, 160+sector_x_offset, 922, "#ffffff", f"+{sector_delta[3:]}", 40)
+                add_sector_background(
+                    temp_image, 183 + sector_x_offset, 786, red_color, "S2"
+                )
+                add_sector_text(
+                    temp_image,
+                    182 + sector_x_offset,
+                    922,
+                    "#ffffff",
+                    f"+{sector_delta[3:]}",
+                    40,
+                )
             else:
-                s2_background = add_sector_background(temp_image, 183+sector_x_offset, 786, green_color, "S2")
-                s2_time = add_sector_text(temp_image, 160+sector_x_offset, 922, "#ffffff", driver_data.sector_times[1], 40)
+                add_sector_background(
+                    temp_image, 183 + sector_x_offset, 786, green_color, "S2"
+                )
+                add_sector_text(
+                    temp_image,
+                    182 + sector_x_offset,
+                    922,
+                    "#ffffff",
+                    driver_data.sector_times[1][2:],
+                    40,
+                )
         else:
-            s2_background = add_sector_background(temp_image, 183+sector_x_offset, 786, gray_color, "S2")
-        s2_text = add_sector_text(temp_image, 224+sector_x_offset, 809, "#ffffff", "S2", 50)
+            add_sector_background(
+                temp_image, 183 + sector_x_offset, 786, gray_color, "S2"
+            )
+        add_sector_text(temp_image, 224 + sector_x_offset, 809, "#ffffff", "S2", 50)
 
         # Sector 3
         if frame_num >= driver_data.sector_end_frames[2]:
             sector_delta = driver_data.sector_delta_times[2]
             if sector_delta != "0:00.000":
-                s3_background = add_sector_background(temp_image, 183+2*sector_x_offset, 786, red_color, "S3")
-                s3_time = add_sector_text(temp_image, 160+2*sector_x_offset, 922, "#ffffff", f"+{sector_delta[3:]}", 40)
+                add_sector_background(
+                    temp_image, 183 + 2 * sector_x_offset, 786, red_color, "S3"
+                )
+                add_sector_text(
+                    temp_image,
+                    182 + 2 * sector_x_offset,
+                    922,
+                    "#ffffff",
+                    f"+{sector_delta[3:]}",
+                    40,
+                )
             else:
-                s3_background = add_sector_background(temp_image, 183+2*sector_x_offset, 786, green_color, "S3")
-                s3_time = add_sector_text(temp_image, 160+2*sector_x_offset, 922, "#ffffff", driver_data.sector_times[2], 40)
+                add_sector_background(
+                    temp_image, 183 + 2 * sector_x_offset, 786, green_color, "S3"
+                )
+                add_sector_text(
+                    temp_image,
+                    182 + 2 * sector_x_offset,
+                    922,
+                    "#ffffff",
+                    driver_data.sector_times[2][2:],
+                    40,
+                )
         else:
-            s3_background = add_sector_background(temp_image, 183+2*sector_x_offset, 786, gray_color, "S3")
-        s3_text = add_sector_text(temp_image, 224+2*sector_x_offset, 809, "#ffffff", "S3", 50)
+            add_sector_background(
+                temp_image, 183 + 2 * sector_x_offset, 786, gray_color, "S3"
+            )
+        add_sector_text(temp_image, 224 + 2 * sector_x_offset, 809, "#ffffff", "S3", 50)
 
         # Only display final time once sector 3 is complete
         if frame_num >= driver_data.sector_end_frames[2]:
-            final_time = add_sector_text(temp_image, 300, 1024, "#ffffff", driver_data.sector_times[2], 80)
+            add_sector_text(
+                temp_image, 300, 1024, "#ffffff", driver_data.sector_times[3], 80
+            )
         # Merge all layers
-        merged_layer = temp_image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
+        temp_image.merge_visible_layers(Gimp.MergeType.CLIP_TO_IMAGE)
 
         # Create output filename
         output_filename = os.path.join(output_dir, f"frame_{frame_num:04d}.png")
@@ -131,6 +191,8 @@ def main(driver_dash_data_file):
             temp_image,
             Gio.File.new_for_path(output_filename),
         )
+
+        Gimp.Image.delete(temp_image)
 
         print(
             f"Saved frame {frame_num + 1}/{driver_data.num_frames}: {output_filename}"
@@ -174,7 +236,17 @@ def create_background_circle(current_gimp_image, center_x, center_y, radius, col
     return bg_circle_layer
 
 
-def add_driver_image(current_gimp_image, driver_file, offset_x, offset_y, width, height, radius, center_x, center_y):
+def add_driver_image(
+    current_gimp_image,
+    driver_file,
+    offset_x,
+    offset_y,
+    width,
+    height,
+    radius,
+    center_x,
+    center_y,
+):
     # Convert string path to Gio.File object
     file = Gio.File.new_for_path(driver_file)
     # Open the driver image as a layer and add it to the current image
@@ -241,6 +313,7 @@ def create_white_border(current_gimp_image, center_x, center_y, radius, border_w
     Gimp.context_set_foreground(old_fg)
     return border_layer
 
+
 def add_drs_indicator(current_gimp_image):
     # Create new DRS text layer
     text_layer = Gimp.TextLayer.new(
@@ -248,7 +321,7 @@ def add_drs_indicator(current_gimp_image):
         "DRS",
         Gimp.Font.get_by_name("Sans-serif Bold Italic"),
         75,  # Font size
-        Gimp.Unit.pixel()
+        Gimp.Unit.pixel(),
     )
 
     current_gimp_image.insert_layer(text_layer, None, 3)
@@ -266,9 +339,11 @@ def add_position_text(current_gimp_image, position, center_x, center_y, radius):
     text_layer = Gimp.TextLayer.new(
         current_gimp_image,
         f"P{position}",
-        Gimp.Font.get_by_name("Sans-serif Bold Italic"),  # Using Gimp.Font instead of string
+        Gimp.Font.get_by_name(
+            "Sans-serif Bold Italic"
+        ),  # Using Gimp.Font instead of string
         size,  # Font size
-        Gimp.Unit.pixel()
+        Gimp.Unit.pixel(),
     )
 
     # First add the layer to the image at position 1 (just above the background circle)
@@ -295,6 +370,7 @@ def add_position_text(current_gimp_image, position, center_x, center_y, radius):
 
     return text_layer
 
+
 THROTTLE_BAR_WIDTH = 150  # Width of the throttle bar in pixels
 THROTTLE_BAR_MAX_HEIGHT = 650  # Maximum height of the throttle bar
 THROTTLE_CORNER_RADIUS = 10  # Radius for rounded corners
@@ -302,6 +378,7 @@ THROTTLE_CORNER_RADIUS = 10  # Radius for rounded corners
 THROTTLE_CENTER_X = 100
 THROTTLE_CENTER_Y = 100
 THROTTLE_RADIUS = 100
+
 
 def add_throttle_indicator(current_gimp_image, throttle_value, color):
     # Create throttle indicator layer (transparent)
@@ -336,13 +413,14 @@ def add_throttle_indicator(current_gimp_image, throttle_value, color):
         THROTTLE_BAR_WIDTH,
         bar_height,
         THROTTLE_CORNER_RADIUS,
-        THROTTLE_CORNER_RADIUS
+        THROTTLE_CORNER_RADIUS,
     )
     # Fill the selection
     throttle_layer.edit_fill(Gimp.FillType.FOREGROUND)
     # Restore the original foreground color
     Gimp.context_set_foreground(old_fg)
     return throttle_layer
+
 
 def add_throttle_background(current_gimp_image):
     # Border thickness
@@ -392,7 +470,7 @@ def add_throttle_background(current_gimp_image):
         border_width,
         border_height,
         THROTTLE_CORNER_RADIUS + 5,  # Slightly larger corner radius for border
-        THROTTLE_CORNER_RADIUS + 5
+        THROTTLE_CORNER_RADIUS + 5,
     )
 
     # Fill the white border
@@ -427,7 +505,7 @@ def add_throttle_background(current_gimp_image):
         bg_width,
         bg_height,
         THROTTLE_CORNER_RADIUS + 3,  # Slightly larger corner radius
-        THROTTLE_CORNER_RADIUS + 3
+        THROTTLE_CORNER_RADIUS + 3,
     )
 
     # Fill the gray background
@@ -446,7 +524,7 @@ def add_sector_text(image, x, y, color, text, font_size):
         text,
         Gimp.Font.get_by_name("Sans-serif Bold"),  # Using Gimp.Font instead of string
         font_size,  # Font size
-        Gimp.Unit.pixel()
+        Gimp.Unit.pixel(),
     )
 
     image.insert_layer(text_layer, None, 0)
@@ -474,18 +552,11 @@ def add_sector_background(image, x, y, color, text):
     bg_color = Gegl.Color.new(color)  # Dark gray background
     Gimp.context_set_foreground(bg_color)
 
-    image.select_round_rectangle(
-        Gimp.ChannelOps.REPLACE,
-        x,
-        y,
-        155,
-        104,
-        10,
-        10
-    )
+    image.select_round_rectangle(Gimp.ChannelOps.REPLACE, x, y, 155, 104, 10, 10)
 
     layer.edit_fill(Gimp.FillType.FOREGROUND)
     return layer
+
 
 def create_driver_widget(driver_file, color_hex, position=None):
     # Get the first open image
@@ -509,14 +580,19 @@ def create_driver_widget(driver_file, color_hex, position=None):
 
     # Add position text behind the background if position is provided
     if position is not None:
-        text_layer = add_position_text(
-            current_gimp_image, position, 715, 100, radius
-        )
+        text_layer = add_position_text(current_gimp_image, position, 715, 100, radius)
 
     # Add the driver image
     driver_layer = add_driver_image(
-        current_gimp_image, driver_file, offset_x, offset_y,
-        width, height, radius, center_x, center_y
+        current_gimp_image,
+        driver_file,
+        offset_x,
+        offset_y,
+        width,
+        height,
+        radius,
+        center_x,
+        center_y,
     )
 
     # Create white border

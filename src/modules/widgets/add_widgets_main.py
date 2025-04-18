@@ -131,7 +131,7 @@ def process_driver(
     json_friendly_sector_packages,
     headless,
 ):
-    """Process a single driver - to be run in parallel"""
+    """Process a single driver - to be run in parallel."""
     json_path = add_driver_dash_data(
         driver,
         driver_run_data,
@@ -158,13 +158,20 @@ def add_widgets_main(config: Config, app_state: AppState):
         time_slower_than_fastest_in_sector,
     ) in sector_packages.items():
         new_sector_times: list[str] = [
-            f"{int(sector_time.total_seconds() // 60)}:{sector_time.total_seconds() % 60:05.3f}"
+            f"{int(sector_time.total_seconds() // 60)}:{int(sector_time.total_seconds() % 60):02d}.{int((sector_time.total_seconds() % 1) * 1000):03d}"
             for sector_time in sector_times
         ]
         new_time_slower_than_fastest_in_sector: list[str] = [
-            f"{int(time.total_seconds() // 60)}:{time.total_seconds() % 60:05.3f}"
+            f"{int(time.total_seconds() // 60)}:{int(time.total_seconds() % 60):02d}.{int((time.total_seconds() % 1) * 1000):03d}"
             for time in time_slower_than_fastest_in_sector
         ]
+
+        # Calculate total time (sum of all 3 sectors) and convert to string format
+        total_time = sum(
+            sector_times, start=sector_times[0] - sector_times[0]
+        )  # Start with 0
+        total_time_str = f"{int(total_time.total_seconds() // 60)}:{int(total_time.total_seconds() % 60):02d}.{int((total_time.total_seconds() % 1) * 1000):03d}"
+        new_sector_times.append(total_time_str)  # Add total time as 4th element
 
         json_friendly_sector_packages[driver] = (
             new_sector_times,
@@ -183,7 +190,7 @@ def add_widgets_main(config: Config, app_state: AppState):
     drivers = run_drivers.drivers
     driver_applied_colors = run_drivers.driver_applied_colors
     # Determine optimal number of processes (can be adjusted based on your system)
-    max_workers = min(len(drivers), os.cpu_count() or 4)
+    max_workers = min(len(drivers), 4)
     print(f"Starting parallel processing with {max_workers} workers")
 
     is_headless = not config["dev_settings"]["ui_mode"]

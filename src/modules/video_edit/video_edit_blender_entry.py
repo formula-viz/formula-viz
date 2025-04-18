@@ -9,8 +9,8 @@ from src.models.app_state import AppState
 from src.models.config import Config
 from src.modules.video_edit import (
     add_background_music,
-    add_driver_dash_new,
     add_fast_forward_indicator,
+    add_gimp_dashes,
     add_timer,
 )
 from src.modules.video_edit.thumbnails import process_thumbnails
@@ -105,13 +105,7 @@ def edit_video(config: Config, app_state: AppState):
     sped_point_df_with_times = focused_driver_run_data.sped_point_df
 
     cur_channel = 2
-    driver_dash = add_driver_dash_new.DriverDash(
-        app_state,
-        config,
-        run_drivers,
-        cur_channel,
-    )
-    cur_channel = driver_dash.cur_channel + 1
+    cur_channel = add_gimp_dashes.add_gimp_dashes(config, app_state, cur_channel)
 
     add_timer.add_frame_counter(
         config=config,

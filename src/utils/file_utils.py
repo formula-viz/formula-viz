@@ -55,6 +55,9 @@ class FileUtils:
         self.FORMULA_VIZ_CIRCLE_ICON_PATH_PURPLE = (
             self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled-purple.png"
         )
+        self.FORMULA_VIZ_ICON_CIRCLED_BASE = (
+            self.IMAGES_DIR / "formula-viz-icon" / "formula-viz-icon-circled-base.png"
+        )
 
         self.MAIN_FONT = self.FONTS_DIR / "Formula1-Regular.ttf"
         self.BOLD_FONT = self.FONTS_DIR / "Formula1-Bold.ttf"
@@ -65,6 +68,14 @@ class FileUtils:
         self.DISCORD_ICON_PATH = self.IMAGES_DIR / "social-icons" / "discord.webp"
         self.INSTAGRAM_ICON_PATH = self.IMAGES_DIR / "social-icons" / "instagram.png"
         self.TIKTOK_ICON_PATH = self.IMAGES_DIR / "social-icons" / "tiktok.webp"
+
+        # Thumbnail scenes
+        self.THUMBNAIL_MODULE_TMP = (
+            self.PROJECT_ROOT / "src" / "modules" / "thumbnail" / "tmp"
+        )
+        self.FINISH_LINE_SCENE_PATH = (
+            self.BLENDER_DIR / "thumbnail_scenes" / "start_line.blend"
+        )
 
     def get_render_output(self, config: Config) -> Path:
         """Get the path for the render output file.
