@@ -7,7 +7,7 @@ sys.path.append(project_root)
 
 from src.models.driver import Driver
 from src.modules.thumbnail.abstract import ImageMode, ThumbnailInput
-from src.modules.thumbnail.main import encode_to_pickle_and_run_blender
+from src.modules.thumbnail.thumbnail import encode_to_pickle_and_run_blender
 
 if __name__ == "__main__":
     # Get ui_mode from command line argument
@@ -19,14 +19,14 @@ if __name__ == "__main__":
         "Verstappen", "VER", "", 2025, "Q", "RedBullRacing", "#0600ef", 1
     )
     leclerc = Driver("Leclerc", "LEC", "", 2025, "Q", "Ferrari", "#f70d1a", 2)
-    alonso = Driver("Alonso", "ALO", "", 2025, "Q", "AstonMartin", "#0090ff", 3)
+    # alonso = Driver("Alonso", "ALO", "", 2025, "Q", "AstonMartin", "#0090ff", 3)
 
     thumbnail_input = ThumbnailInput(
         ui_mode=ui_mode,
         should_render=should_render,
         should_post_process=should_post_process,
-        image_mode=ImageMode.TWO_IMAGES,
-        drivers=[verstappen, leclerc, alonso],
+        image_mode=ImageMode.ONE_IMAGE,
+        drivers=[verstappen, leclerc],
         driver_for_img_one=verstappen,
         driver_for_img_two=leclerc,
     )

@@ -13,6 +13,8 @@ class DevelopmentConfig(TypedDict):
     skip_render: bool
     skip_gimp: bool
     skip_load: bool
+    skip_thumbnail: bool
+    skip_video_edit: bool
 
 
 class RenderConfig(TypedDict):

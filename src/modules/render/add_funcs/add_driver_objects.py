@@ -62,7 +62,9 @@ def scale_and_position_car(
     return (center_x, center_y, center_z)
 
 
-def create_car_obj(team_id: str, driver_last_name: str, collection=None):
+def create_car_obj(
+    team_id: str, driver_last_name: str, applied_driver_color: str, collection=None
+):
     """Create a base F1 car object that will be used as a template for this team."""
     # Create empty object to serve as parent
     empty_obj = bpy.data.objects.new(f"{driver_last_name}{team_id}Car", None)
@@ -102,6 +104,30 @@ def create_car_obj(team_id: str, driver_last_name: str, collection=None):
                     for node in slot.material.node_tree.nodes:
                         if node.type == "BSDF_PRINCIPLED":
                             node.inputs["Metallic"].default_value = 0.75
+
+    # Find and modify helmet paint material
+    for obj in data_to.objects:
+        for slot in obj.material_slots:
+            if slot.material and "Helmet paint" in slot.material.name:
+                for node in slot.material.node_tree.nodes:
+                    if node.name != "Material Output":
+                        # Convert hex color to blender RGB
+                        rgb_color = hex_to_blender_rgb(applied_driver_color)
+                        # Set colors on the Car Paint node
+                        node.inputs["Base Color"].default_value = (
+                            *rgb_color,
+                            1.0,
+                        )
+                        node.inputs["Clearcoat - Color"].default_value = (
+                            *rgb_color,
+                            1.0,
+                        )
+                        node.inputs["Flakes Color"].default_value = (
+                            *rgb_color,
+                            1.0,
+                        )
+                        node.inputs["Clearcoat - Roughness"].default_value = 0.2
+                        node.inputs["Clearcoat - IOR"].default_value = 300
 
     position_offset = scale_and_position_car(empty_obj)
     if team_id == "Williams":
@@ -247,18 +273,27 @@ def add_driver_keyframes(driver_obj, df):
     rot_y = df["RotY"]
     rot_z = df["RotZ"]
     tire_rot = df["TireRot"]
+
+    drs = df["DRS"]
+
     # harsher_rot_z = df["HarsherRotZ"]
 
     # Prepare driver keyframes
     driver_loc_keyframes = []
     driver_rot_keyframes = []
+    driver_drs_keyframes = []
     for i in range(len(df)):
         cur_frame = i + 1
         point = mathutils.Vector((x_values.iloc[i], y_values.iloc[i], z_values.iloc[i]))
         rot_eul = mathutils.Vector((rot_x.iloc[i], rot_y.iloc[i], rot_z.iloc[i]))
 
+        drs_rot = mathutils.Vector((math.radians(90), 0, 0))
+        if drs.iloc[i] in [10, 12, 14]:
+            drs_rot = mathutils.Vector((math.radians(60), 0, 0))
+
         driver_loc_keyframes.append((point, cur_frame))
         driver_rot_keyframes.append((rot_eul, cur_frame))
+        driver_drs_keyframes.append((drs_rot, cur_frame))
 
     # Apply driver keyframes in batch
     for point, frame in driver_loc_keyframes:
@@ -268,6 +303,17 @@ def add_driver_keyframes(driver_obj, df):
     for rot_eul, frame in driver_rot_keyframes:
         driver_obj.rotation_euler = rot_eul
         driver_obj.keyframe_insert(data_path="rotation_euler", frame=frame)
+
+    drs_obj = None
+    for child in driver_obj.children_recursive:
+        if "DRS" in child.name:
+            drs_obj = child
+            break
+    assert drs_obj is not None, "DRS object not found"
+
+    for drs_rot, frame in driver_drs_keyframes:
+        drs_obj.rotation_euler = drs_rot
+        drs_obj.keyframe_insert(data_path="rotation_euler", frame=frame)
 
     # Find and animate all pyrotate objects recursively
     def animate_pyrotate_objects(obj):
@@ -548,8 +594,6 @@ def replace_color_in_image(blender_obj, hex_color, driver):
     new_image_path = str(
         file_utils.project_paths.get_new_texture_image_path(blender_obj.name, hex_color)
     )
-
-    print(image_path)
 
     # first check if the image already exists
     if os.path.exists(new_image_path):
@@ -872,7 +916,9 @@ def main(config: Config, run_drivers: RunDrivers):
             driver_obj = create_driver_from_base(driver.abbrev, base_empty_obj)
             set_color(driver_obj, applied_colors[driver], driver.abbrev)
         else:
-            driver_obj, position_offset = create_car_obj(driver.team, driver.last_name)
+            driver_obj, position_offset = create_car_obj(
+                driver.team, driver.last_name, applied_colors[driver]
+            )
         driver_objs[driver] = driver_obj
 
         # Move driver object from scene collection to drivers collection

@@ -60,37 +60,66 @@ def add_gimp_dashes(config: Config, app_state: AppState, cur_channel: int):
     drivers = run_drivers.drivers
 
     # Define common parameters
-    X_OFFSET = 1568
-    Y_OFFSET = -654
-    SCALE = 0.7
+    LANDSCAPE_X_OFFSET = 1568
+    LANDSCAPE_Y_OFFSET = -654
+    LANDSCAPE_SCALE = 0.7
+
+    SHORTS_X_OFFSET = 362
+    SHORTS_Y_OFFSET = -650
+    SHORTS_SCALE = 0.35
 
     if config["render"]["is_shorts_output"]:
         if len(drivers) == 2:
             cur_channel = _add_gimp_dash(
-                drivers[0], -X_OFFSET, Y_OFFSET, SCALE, SCALE, cur_channel
+                drivers[0],
+                -SHORTS_X_OFFSET,
+                SHORTS_Y_OFFSET,
+                SHORTS_SCALE,
+                SHORTS_SCALE,
+                cur_channel,
             )
             cur_channel = _add_gimp_dash(
-                drivers[1], X_OFFSET, Y_OFFSET, SCALE, SCALE, cur_channel
+                drivers[1],
+                SHORTS_X_OFFSET,
+                SHORTS_Y_OFFSET,
+                SHORTS_SCALE,
+                SHORTS_SCALE,
+                cur_channel,
             )
         else:
             cur_channel = _add_gimp_dash(
                 run_drivers.focused_driver,
-                X_OFFSET,
-                Y_OFFSET,
-                SCALE,
-                SCALE,
+                0,
+                SHORTS_Y_OFFSET,
+                SHORTS_SCALE,
+                SHORTS_SCALE,
                 cur_channel,
             )
     elif len(drivers) == 2:
         cur_channel = _add_gimp_dash(
-            drivers[0], -X_OFFSET, Y_OFFSET, SCALE, SCALE, cur_channel
+            drivers[0],
+            -LANDSCAPE_X_OFFSET,
+            LANDSCAPE_Y_OFFSET,
+            LANDSCAPE_SCALE,
+            LANDSCAPE_SCALE,
+            cur_channel,
         )
         cur_channel = _add_gimp_dash(
-            drivers[1], X_OFFSET, Y_OFFSET, SCALE, SCALE, cur_channel
+            drivers[1],
+            LANDSCAPE_X_OFFSET,
+            LANDSCAPE_Y_OFFSET,
+            LANDSCAPE_SCALE,
+            LANDSCAPE_SCALE,
+            cur_channel,
         )
     else:
         cur_channel = _add_gimp_dash(
-            run_drivers.focused_driver, X_OFFSET, Y_OFFSET, SCALE, SCALE, cur_channel
+            run_drivers.focused_driver,
+            SHORTS_X_OFFSET,
+            SHORTS_Y_OFFSET,
+            SHORTS_SCALE,
+            SHORTS_SCALE,
+            cur_channel,
         )
 
     return cur_channel

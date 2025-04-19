@@ -13,7 +13,7 @@ from src.utils.logger import log_info
 
 
 def open_in_gimp(gimp_path, json_path, run_script=True, headless=False):
-    """Opens GIMP with the specified file and optionally runs a script.
+    """Open GIMP with the specified file and optionally runs a script.
 
     Args:
         gimp_path: Path to the GIMP file to open
@@ -32,6 +32,7 @@ def open_in_gimp(gimp_path, json_path, run_script=True, headless=False):
         # Add headless mode if requested
         if headless:
             gimp_cmd.append("--no-interface")
+            gimp_cmd.append("--no-splash")
         else:
             gimp_cmd.append("--no-splash")
 
@@ -47,6 +48,7 @@ def open_in_gimp(gimp_path, json_path, run_script=True, headless=False):
                 [
                     gimp_path,
                     "--batch-interpreter",
+                    "--quit",
                     "python-fu-eval",
                     "-b",
                     f"import sys; sys.path.append('{project_root}'); from src.modules.widgets.gimp_processor import main; main('{os.path.abspath(json_path)}')",

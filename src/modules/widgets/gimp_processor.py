@@ -381,6 +381,9 @@ THROTTLE_RADIUS = 100
 
 
 def add_throttle_indicator(current_gimp_image, throttle_value, color):
+    if throttle_value < 0.01:
+        return
+
     # Create throttle indicator layer (transparent)
     throttle_layer = Gimp.Layer.new(
         current_gimp_image,

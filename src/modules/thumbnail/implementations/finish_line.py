@@ -10,6 +10,7 @@ from src.modules.thumbnail.abstract import (
     ThumbnailType,
 )
 from src.utils import file_utils
+from src.utils.colors import hex_to_blender_rgb
 from src.utils.logger import log_err, log_info
 
 
@@ -60,17 +61,50 @@ class FinishLine(ThumbnailAbstract):
         bpy.context.scene.collection.children.link(cars_collection)
 
         first = sorted_drivers[0]
-        first_obj, _ = create_car_obj(first.team, first.last_name, cars_collection)
+        first_obj, _ = create_car_obj(
+            first.team, first.last_name, first.default_driver_color, cars_collection
+        )
         first_obj.location = (-1.45, 8.41, 0)
+        # Get the car trail material and set its color
+        car_one_trail_mat = bpy.data.materials.get("CarOneTrailMat")
+        car_one_trail_mat.node_tree.nodes["Emission"].inputs[0].default_value = (
+            *hex_to_blender_rgb(first.default_driver_color),
+            1,
+        )
 
         if len(sorted_drivers) > 1:
             second = sorted_drivers[1]
             second_obj, _ = create_car_obj(
-                second.team, second.last_name, cars_collection
+                second.team,
+                second.last_name,
+                second.default_driver_color,
+                cars_collection,
             )
             second_obj.location = (1.94, 12.1, 0)
+            car_two_trail_mat = bpy.data.materials.get("CarTwoTrailMat")
+            car_two_trail_mat.node_tree.nodes["Emission"].inputs[0].default_value = (
+                *hex_to_blender_rgb(second.default_driver_color),
+                1,
+            )
+        else:
+            # Delete CarTwoTrail if no second driver
+            car_two_trail = bpy.data.objects.get("CarTwoTrail")
+            if car_two_trail:
+                bpy.data.objects.remove(car_two_trail, do_unlink=True)
 
         if len(sorted_drivers) > 2:
             third = sorted_drivers[2]
-            third_obj, _ = create_car_obj(third.team, third.last_name, cars_collection)
+            third_obj, _ = create_car_obj(
+                third.team, third.last_name, third.default_driver_color, cars_collection
+            )
             third_obj.location = (-4.44, 13.88, 0)
+            car_three_trail_mat = bpy.data.materials.get("CarThreeTrailMat")
+            car_three_trail_mat.node_tree.nodes["Emission"].inputs[0].default_value = (
+                *hex_to_blender_rgb(third.default_driver_color),
+                1,
+            )
+        else:
+            # Delete CarThreeTrail if no third driver
+            car_three_trail = bpy.data.objects.get("CarThreeTrail")
+            if car_three_trail:
+                bpy.data.objects.remove(car_three_trail, do_unlink=True)

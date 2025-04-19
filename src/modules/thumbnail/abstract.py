@@ -79,7 +79,7 @@ class ThumbnailAbstract(ABC):
         scene = bpy.context.scene
         scene.render.filepath = self.final_output_path
         scene.render.image_settings.file_format = "PNG"
-        scene.render.resolution_percentage = 80
+        scene.render.resolution_percentage = 72
 
         bpy.ops.render.render(animation=False, write_still=True)
         log_info(f"Thumbnail post-processed and saved to {self.final_output_path}")

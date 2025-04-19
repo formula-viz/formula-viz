@@ -36,16 +36,18 @@ def run_for_config(config: Config, project_root: Path):
             add_widgets_main(config, app_state)
             log_info("Added the widgets.")
 
-        thumbnail.main(config, app_state)
-        log_info("Thumbnail created.")
-
-        video_edit_main(config, app_state)
-        log_info("Video editing completed.")
-
         if (
-            not config["dev_settings"]["ui_mode"]
-            and not config["dev_settings"]["skip_render"]
+            not config["dev_settings"]["skip_thumbnail"]
+            and not config["render"]["is_shorts_output"]
         ):
+            thumbnail.main(config, app_state)
+            log_info("Thumbnail created.")
+
+        if not config["dev_settings"]["skip_video_edit"]:
+            video_edit_main(config, app_state)
+            log_info("Video editing completed.")
+
+        if not config["dev_settings"]["ui_mode"]:
             log_info("UI mode is disabled.")
             socials_upload_main.socials_upload_main(config)
             log_info("Socials upload completed.")
